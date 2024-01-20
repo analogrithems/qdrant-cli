@@ -61,3 +61,21 @@ Options:
   -s [STRING], --server[=STRING]   Server address of qdrant default: 'http://localhost:6333
   -w [STRING], --wait[=STRING]     Wait till it finishes to return Default: True
 ```
+
+
+## Learn more
+
+A lot of this based off of the qdrant-client api
+https://python-client.qdrant.tech/qdrant_client
+
+Also the qdrant_remote code was very helpful in understanding the api
+https://github.com/qdrant/qdrant-client/blob/efb876fe3915dc5e2855f60a5617e940c84591e5/qdrant_client/qdrant_remote.py
+
+Here's there OpenAPI link 
+https://qdrant.github.io/qdrant/redoc/index.html
+
+Snapshots - https://qdrant.tech/documentation/concepts/snapshots/
+
+Distributed cluster - https://qdrant.tech/documentation/guides/distributed_deployment/#cluster-scaling
+
+PyInvoke Readme - https://docs.pyinvoke.org/_/downloads/en/latest/pdf/
