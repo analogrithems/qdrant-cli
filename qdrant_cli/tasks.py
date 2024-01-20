@@ -288,6 +288,80 @@ def create_collection(c,
 
 @task(
     help={
+        "collection": "The collection to create an index for",
+        "field": "Field we wish to index",
+        "schema": "The schema for the index",
+        "type": "Type of index",
+        "order": "The order of the index",
+        "wait": "Wait till it finishes to return Default: True",
+        "server": "Server address of qdrant default: 'http://localhost:6333",
+        "format": "output format of the response [JSON|YAML]",
+    },
+    optional=['format', 'server'],
+)
+def create_payload_index(c, collection, field, schema, type, order, wait=True, server="http://localhost:6333", format="json"):
+    """
+    Create an index on a payload
+    """
+    server = os.environ.get("QDRANT_SERVER",server)
+    try:
+        client = qdrant_client.QdrantClient(server,timeout=1000)
+        response = client.create_payload_index(
+            collection_name=collection,
+            field_name=field,
+            field_schema=schema,
+            field_type=type,
+            wait=(wait==True),
+            ordering=order
+        )
+        out_formatter(response, format)
+    except qdrant_client.http.exceptions.ResponseHandlingException as e:
+        print(f"Failed to connect to {server}: {e}")
+        exit(-1)
+    except Exception:
+        print(f"Error creating payload index\n")
+        traceback.print_exc(file=sys.stdout)
+        exit(-2)
+
+
+@task(
+    help={
+        "collection": "The collection to create an index for",
+        "field": "Field we wish to index",
+        "order": "The order of the index",
+        "wait": "Wait till it finishes to return Default: True",
+        "server": "Server address of qdrant default: 'http://localhost:6333",
+        "format": "output format of the response [JSON|YAML]",
+    },
+    optional=['format', 'server'],
+)
+def delete_payload_index(c, collection, field, order, wait=True, server="http://localhost:6333", format="json"):
+    """
+    Delete an index on a payload
+    """
+    server = os.environ.get("QDRANT_SERVER",server)
+    try:
+        client = qdrant_client.QdrantClient(server,timeout=1000)
+        response = client.create_payload_index(
+            collection_name=collection,
+            field_name=field,
+            field_schema=schema,
+            field_type=type,
+            wait=(wait==True),
+            ordering=order
+        )
+        out_formatter(response, format)
+    except qdrant_client.http.exceptions.ResponseHandlingException as e:
+        print(f"Failed to connect to {server}: {e}")
+        exit(-1)
+    except Exception:
+        print(f"Error deleteing payload index\n")
+        traceback.print_exc(file=sys.stdout)
+        exit(-2)
+
+
+@task(
+    help={
         "server": "Server address of qdrant default: 'http://localhost:6333",
         "format": "output format of the response [JSON|YAML]",
     },
@@ -329,8 +403,7 @@ def get_locks(c, server="http://localhost:6333", format="json"):
     try:
         client = qdrant_client.QdrantClient(server,timeout=1000)
         response = client.get_locks()
-        print(response)
-        #out_formatter(response, format)
+        out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
         print(f"Failed to connect to {server}: {e}")
         exit(-1)
@@ -748,6 +821,3 @@ def out_formatter(output=None, format="json"):
         
     return output
 
-
-
-# @TODO
