@@ -23,15 +23,16 @@ You can see all the commands with qdrant --list
 $ qdrant -l
 Subcommands:
 
-Subcommands:
-
+  create-collection        Create a collection with all the fixins
   create-full-snapshot     This will create a full snapshot of the server
   create-shard-snapshot    This will create a new shard of a given collection
   delete-cluster-peer      Delete a peer in the cluster
+  delete-collection        Delete a specified collectoin
   delete-full-snapshot     This will delete a full snapshot of the server
   delete-shard-snapshot    This will delete the snapshot for a given collection/shard
   delete-snapshot          Delete a specific snapshot
   download-snapshot        Download a specific snapshot from a collection
+  get-aliases              Get a list of aliases
   get-cluster              List the cluster details for the given server
   get-collection           Return the details on a specific collection
   get-collection-cluster   List the cluster details of a given collection
@@ -50,16 +51,29 @@ You can get deeper details about specific commands with the format `qdrant <subc
 *Example:* 
 
 ```
-$ qdrant create-full-snapshot --help
-Usage: qdrant [--core-opts] create-full-snapshot [--options] [other tasks here ...]
+$ qdrant --help create-collection
+Usage: qdrant [--core-opts] create-collection [--options] [other tasks here ...]
 
 Docstring:
-  This will create a full snapshot of the server
+  Create a collection with all the fixins
 
 Options:
-  -f [STRING], --format[=STRING]   output format of the response [JSON|YAML]
-  -s [STRING], --server[=STRING]   Server address of qdrant default: 'http://localhost:6333
-  -w [STRING], --wait[=STRING]     Wait till it finishes to return Default: True
+  --server[=STRING]                         Server address of qdrant default: 'http://localhost:6333
+  -a [STRING], --wal[=STRING]               WAL config
+  -c STRING, --collection=STRING            The name of the collection we want to remove
+  -d [STRING], --sharding-method[=STRING]   Defaults to auto, set this to custom if you will manage sharding
+  -e [STRING], --sparse-vectors[=STRING]    Sparce vector configuration
+  -f [STRING], --format[=STRING]            output format of the response [JSON|YAML]
+  -h [STRING], --hnsw[=STRING]              HNSW config in json
+  -i [STRING], --init-from[=STRING]         Which node to boot cluster from
+  -o [STRING], --on-disk[=STRING]           Should we serve from disk (bool)
+  -p [STRING], --optimizers[=STRING]        Custom optimzer config
+  -q [STRING], --quantization[=STRING]      quantization
+  -r [INT], --replication[=INT]             How many pieces of each shard
+  -s [INT], --shards[=INT]                  Shard count for the collection or defaiult value if none set
+  -t [STRING], --timeout[=STRING]           How long to wait for the collection to be created
+  -v STRING, --vectors=STRING               The vectors configuration in JSON format
+  -w [INT], --write-consistency[=INT]       How many writes to confirm
 ```
 
 

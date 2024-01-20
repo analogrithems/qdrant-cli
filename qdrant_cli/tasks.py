@@ -173,6 +173,121 @@ def get_collection(c,  collection, server="http://localhost:6333", format="json"
 
 @task(
     help={
+        "collection": "The name of the collection we want to remove",
+        "server": "Server address of qdrant default: 'http://localhost:6333",
+        "format": "output format of the response [JSON|YAML]",
+    },
+    optional=['format', 'server'],
+)
+def delete_collection(c,  collection, server="http://localhost:6333", format="json"):
+    """
+    Delete a specified collectoin
+    """
+    
+    server = os.environ.get("QDRANT_SERVER",server)
+
+    try:
+        client = qdrant_client.QdrantClient(server,timeout=1000)
+        response = client.delete_collection(
+            collection_name=collection
+        )
+        out_formatter(response, format)
+    except qdrant_client.http.exceptions.ResponseHandlingException as e:
+        print(f"Failed to connect to {server}: {e}")
+        exit(-1)
+    except Exception:
+        print(f"Error deleteing collection: DELETE {server}/collections/{collection}\n")
+        traceback.print_exc(file=sys.stdout)
+        exit(-2)
+
+@task(
+    help={
+        "collection": "The name of the collection we want to remove",
+        "vectors": "The vectors configuration in JSON format",
+        "shards": "Shard count for the collection or defaiult value if none set",
+        "replication": "How many pieces of each shard",
+        "write_consistency": "How many writes to confirm",
+        "on_disk": "Should we serve from disk (bool)",
+        "hnsw": "HNSW config in json",
+        "optimizers": "Custom optimzer config",
+        "wal": "WAL config",
+        "quantization": "quantization",
+        "init_from": "Which node to boot cluster from",
+        "timeout": "How long to wait for the collection to be created",
+        "sparse_vectors": "Sparce vector configuration",
+        "sharding_method": "Defaults to auto, set this to custom if you will manage sharding",
+        "server": "Server address of qdrant default: 'http://localhost:6333",
+        "format": "output format of the response [JSON|YAML]",
+    },
+    optional=[
+        'shards', 
+        'replication', 
+        'write_consistency', 
+        'on_disk', 
+        'hnsw', 
+        'optimizers', 
+        'wal', 
+        'quantization', 
+        'init_from', 
+        'timeout', 
+        'sparse_vectors', 
+        'sharding_method',  
+        'server',
+        'format',
+    ],
+)
+def create_collection(c,  
+        collection, 
+        vectors, 
+        shards=2,
+        replication=1,
+        write_consistency=2,
+        on_disk=False,
+        hnsw=None,
+        optimizers=None,
+        wal=None,
+        quantization=None,
+        init_from=None,
+        timeout=None,
+        sparse_vectors=None,
+        sharding_method=None,
+        server="http://localhost:6333", 
+        format="json",
+    ):
+    """
+    Create a collection with all the fixins
+    """
+    server = os.environ.get("QDRANT_SERVER",server)
+    try:
+        client = qdrant_client.QdrantClient(server,timeout=1000)
+        response = client.create_collection(
+            collection_name=collection,
+            vectors_config=vectors,
+            shard_number=shards,
+            replication_factor=replication,
+            write_consistency_factor=write_consistency,
+            on_disk_payload=on_disk,
+            hnsw_config=hnsw,
+            optimizers_config=optimizers,
+            wal_config=wal,
+            quantization_configqu=quantization,
+            init_from=init_from,
+            timeout=timeout,
+            sparse_vectors_config=sparse_vectors,
+            sharding_method=sharding_method
+        )
+        out_formatter(response, format)
+    except qdrant_client.http.exceptions.ResponseHandlingException as e:
+        print(f"Failed to connect to {server}: {e}")
+        exit(-1)
+    except Exception:
+        print(f"Error create collection: PUT {server}/collections/{collection}\n")
+        traceback.print_exc(file=sys.stdout)
+        exit(-2)
+
+
+@task(
+    help={
         "server": "Server address of qdrant default: 'http://localhost:6333",
         "format": "output format of the response [JSON|YAML]",
     },
