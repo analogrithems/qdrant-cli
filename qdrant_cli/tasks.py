@@ -8,7 +8,6 @@ import re
 import sys
 import time
 import traceback
-import httpx
 
 from invoke import task
 from invoke.util import debug
