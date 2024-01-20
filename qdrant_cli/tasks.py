@@ -361,7 +361,8 @@ def create_full_snapshot(c, wait=True, server="http://localhost:6333", format="j
         print(f"Error creating full snapshots: {url}\n")
         traceback.print_exc(file=sys.stdout)
         exit()
-        
+
+
 @task(
     help={
         "snapshot":"The name of the snapshot to delete",
@@ -369,7 +370,7 @@ def create_full_snapshot(c, wait=True, server="http://localhost:6333", format="j
         "server": "Server address of qdrant default: 'http://localhost:6333",
         "format": "output format of the response [JSON|YAML]",
     },
-    optional=['format','server']
+    optional=['wait', 'format','server']
 )
 def delete_full_snapshot(c, snapshot, wait=True, server="http://localhost:6333", format="json"):
     """
