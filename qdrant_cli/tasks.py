@@ -508,13 +508,11 @@ def snapshot_collection(c, collection, wait=True, server="http://localhost:6333"
     help={
         "collection": "Give a specific collection to snapshot",
         "snapshot": "The name of the snapshot to download from the specified collection",
-        "wait": "Wait till it finishes to return Default: True",
         "server": "Server address of qdrant default: 'http://localhost:6333",
-        "format": "output format of the response [JSON|YAML]",
     },
     optional=['wait', 'format', 'server'],
 )
-def download_snapshot(c, collection, snapshot, wait=True, server="http://localhost:6333", format="json"):
+def download_snapshot(c, collection, snapshot, server="http://localhost:6333"):
     """
     Download a specific snapshot from a collection
     """
@@ -526,6 +524,7 @@ def download_snapshot(c, collection, snapshot, wait=True, server="http://localho
         response = requests.request("GET", url)
         with open(f"./{snapshot}", "wb") as f:
             f.write(response.content)
+        return 0
     except requests.exceptions.ConnectionError as e:
         print(f"Failed to connect to {server}: {e}")
         exit(-1)
@@ -547,11 +546,9 @@ def download_snapshot(c, collection, snapshot, wait=True, server="http://localho
 )
 def delete_snapshot(c, snapshot=None, collection=None, server="http://localhost:6333", format="json"):
     """
-    Delete a specific snapshot
+    Delete a specific snapshot DELETE "{server}/collections/{collection}/snapshots/{snapshot}"
     """
-    
     server = os.environ.get("QDRANT_SERVER",server)
-
     try:        
         headers = {"Content-Type": "application/json"}
         url = f"{server}/collections/{collection}/snapshots/{snapshot}"
@@ -589,6 +586,35 @@ def list_full_snapshots(c, server="http://localhost:6333", format="json"):
         exit(-1)
     except Exception:
         print(f"Error listing full snapshots: {url}\n")
+        traceback.print_exc(file=sys.stderr)
+        exit(-2)
+        
+ 
+@task(
+    autoprint=False,
+    help={
+        "snapshot": "The name of the snapshot to download from the specified collection",
+        "server": "Server address of qdrant default: 'http://localhost:6333",
+    },
+    optional=['server'],
+)
+def download_full_snapshot(c, snapshot, server="http://localhost:6333"):
+    """
+    Download a full snapshot.  If running in a cluster you must snapshot each node
+    """
+    
+    server = os.environ.get("QDRANT_SERVER",server)
+
+    try:
+        url = f"{server}/snapshots/{snapshot}"
+        response = requests.request("GET", url)
+        with open(f"./{snapshot}", "wb") as f:
+            f.write(response.content)
+    except requests.exceptions.ConnectionError as e:
+        print(f"Failed to connect to {server}: {e}")
+        exit(-1)
+    except Exception:
+        print(f"Error downloading full snapshot: {url}\n")
         traceback.print_exc(file=sys.stderr)
         exit(-2)
         

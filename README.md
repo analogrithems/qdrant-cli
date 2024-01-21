@@ -34,7 +34,8 @@ Subcommands:
   delete-full-snapshot     This will delete a full snapshot of the server
   delete-payload-index     Delete an index on a payload
   delete-shard-snapshot    This will delete the snapshot for a given collection/shard
-  delete-snapshot          Delete a specific snapshot
+  delete-snapshot          Delete a specific snapshot DELETE "{server}/collections/{collection}/snapshots/{snapshot}"
+  download-full-snapshot   Download a full snapshot.  If running in a cluster you must snapshot each node
   download-snapshot        Download a specific snapshot from a collection
   get-aliases              Get a list of aliases
   get-cluster              List the cluster details for the given server
