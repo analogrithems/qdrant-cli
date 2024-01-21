@@ -84,7 +84,7 @@ Docstring:
   Create a collection with all the fixins
 
 Options:
-  --server[=STRING]                         Server address of qdrant default: 'http://localhost:6333
+  --server[=STRING]                         Server address of qdrant default: 'http://localhost:6333'
   -a [STRING], --wal[=STRING]               WAL config
   -c STRING, --collection=STRING            The name of the collection we want to remove
   -d [STRING], --sharding-method[=STRING]   Defaults to auto, set this to custom if you will manage sharding

@@ -33,7 +33,7 @@ def p_log(msg, severity="info"):
 @task(
     autoprint=False,
     help={
-        "server": "Server address of qdrant default: 'http://localhost:6333",
+        "server": "Server address of qdrant default: 'http://localhost:6333'",
         "format": "output format of the response [JSON|YAML]",
     },
     optional=['format', 'server'],
@@ -64,7 +64,7 @@ def get_cluster(c, server="http://localhost:6333", format="json"):
     autoprint=False,
     help={
         "peer": "The peer to remove from the cluster",
-        "server": "Server address of qdrant default: 'http://localhost:6333",
+        "server": "Server address of qdrant default: 'http://localhost:6333'",
         "format": "output format of the response [JSON|YAML]",
     },
     optional=['format', 'server'],
@@ -95,7 +95,7 @@ def delete_cluster_peer(c, peer, server="http://localhost:6333", format="json"):
     autoprint=False,
     help={
         "collection": "The name or id of the collection we want to get cluster information about",
-        "server": "Server address of qdrant default: 'http://localhost:6333",
+        "server": "Server address of qdrant default: 'http://localhost:6333'",
         "format": "output format of the response [JSON|YAML]",
     },
     optional=['format', 'server'],
@@ -124,7 +124,7 @@ def get_collection_cluster(c, collection, server="http://localhost:6333", format
 @task(
     autoprint=False,
     help={
-        "server": "Server address of qdrant default: 'http://localhost:6333",
+        "server": "Server address of qdrant default: 'http://localhost:6333'",
         "format": "output format of the response [JSON|YAML]",
     },
     optional=['format', 'server'],
@@ -151,7 +151,7 @@ def get_collections(c,  server="http://localhost:6333", format="json"):
     autoprint=False,
     help={
         "collection": "The name or id of the collection we want to get cluster information about",
-        "server": "Server address of qdrant default: 'http://localhost:6333",
+        "server": "Server address of qdrant default: 'http://localhost:6333'",
         "format": "output format of the response [JSON|YAML]",
     },
     optional=['format', 'server'],
@@ -182,7 +182,7 @@ def get_collection(c,  collection, server="http://localhost:6333", format="json"
     autoprint=False,
     help={
         "collection": "The name of the collection we want to remove",
-        "server": "Server address of qdrant default: 'http://localhost:6333",
+        "server": "Server address of qdrant default: 'http://localhost:6333'",
         "format": "output format of the response [JSON|YAML]",
     },
     optional=['format', 'server'],
@@ -225,7 +225,7 @@ def delete_collection(c,  collection, server="http://localhost:6333", format="js
         "timeout": "How long to wait for the collection to be created",
         "sparse_vectors": "Sparce vector configuration",
         "sharding_method": "Defaults to auto, set this to custom if you will manage sharding",
-        "server": "Server address of qdrant default: 'http://localhost:6333",
+        "server": "Server address of qdrant default: 'http://localhost:6333'",
         "format": "output format of the response [JSON|YAML]",
     },
     optional=[
@@ -304,7 +304,7 @@ def create_collection(c,
         "type": "Type of index",
         "order": "The order of the index",
         "wait": "Wait till it finishes to return Default: True",
-        "server": "Server address of qdrant default: 'http://localhost:6333",
+        "server": "Server address of qdrant default: 'http://localhost:6333'",
         "format": "output format of the response [JSON|YAML]",
     },
     optional=['format', 'server'],
@@ -341,7 +341,7 @@ def create_payload_index(c, collection, field, schema, type, order, wait=True, s
         "field": "Field we wish to index",
         "order": "The order of the index",
         "wait": "Wait till it finishes to return Default: True",
-        "server": "Server address of qdrant default: 'http://localhost:6333",
+        "server": "Server address of qdrant default: 'http://localhost:6333'",
         "format": "output format of the response [JSON|YAML]",
     },
     optional=['format', 'server'],
@@ -374,7 +374,7 @@ def delete_payload_index(c, collection, field, order, wait=True, server="http://
 @task(
     autoprint=False,
     help={
-        "server": "Server address of qdrant default: 'http://localhost:6333",
+        "server": "Server address of qdrant default: 'http://localhost:6333'",
         "format": "output format of the response [JSON|YAML]",
     },
     optional=['format', 'server'],
@@ -401,7 +401,7 @@ def get_aliases(c, server="http://localhost:6333", format="json"):
 @task(
     autoprint=False,
     help={
-        "server": "Server address of qdrant default: 'http://localhost:6333",
+        "server": "Server address of qdrant default: 'http://localhost:6333'",
         "format": "output format of the response [JSON|YAML]",
     },
     optional=['format', 'server'],
@@ -429,7 +429,7 @@ def get_locks(c, server="http://localhost:6333", format="json"):
     autoprint=False,
     help={
         "collection": "Give a specific collection to list snapshots for or ommit for all",
-        "server": "Server address of qdrant default: 'http://localhost:6333",
+        "server": "Server address of qdrant default: 'http://localhost:6333'",
         "format": "output format of the response [JSON|YAML]",
     },
     optional=['collection', 'format', 'server'],
@@ -475,7 +475,7 @@ def get_snapshots(c, collection=None, server="http://localhost:6333", format="js
     help={
         "collection": "Give a specific collection to snapshot",
         "wait": "Wait till it finishes to return Default: True",
-        "server": "Server address of qdrant default: 'http://localhost:6333",
+        "server": "Server address of qdrant default: 'http://localhost:6333'",
         "format": "output format of the response [JSON|YAML]",
     },
     optional=['wait', 'format', 'server'],
@@ -508,7 +508,7 @@ def snapshot_collection(c, collection, wait=True, server="http://localhost:6333"
     help={
         "collection": "Give a specific collection to snapshot",
         "snapshot": "The name of the snapshot to download from the specified collection",
-        "server": "Server address of qdrant default: 'http://localhost:6333",
+        "server": "Server address of qdrant default: 'http://localhost:6333'",
     },
     optional=['wait', 'format', 'server'],
 )
@@ -539,7 +539,7 @@ def download_snapshot(c, collection, snapshot, server="http://localhost:6333"):
     help={
         "snapshot":"The name of the snapshot to delete",
         "collection": "Collection we will delete a snapshot for",
-        "server": "Server address of qdrant default: 'http://localhost:6333",
+        "server": "Server address of qdrant default: 'http://localhost:6333'",
         "format": "output format of the response [JSON|YAML]",
     },
     optional=['format', 'server'],
@@ -567,7 +567,7 @@ def delete_snapshot(c, snapshot=None, collection=None, server="http://localhost:
 @task(
     autoprint=False,
     help={
-        "server": "Server address of qdrant default: 'http://localhost:6333",
+        "server": "Server address of qdrant default: 'http://localhost:6333'",
         "format": "output format of the response [JSON|YAML]",
     },
     optional=['format','server']
@@ -594,7 +594,7 @@ def list_full_snapshots(c, server="http://localhost:6333", format="json"):
     autoprint=False,
     help={
         "snapshot": "The name of the snapshot to download from the specified collection",
-        "server": "Server address of qdrant default: 'http://localhost:6333",
+        "server": "Server address of qdrant default: 'http://localhost:6333'",
     },
     optional=['server'],
 )
@@ -623,7 +623,7 @@ def download_full_snapshot(c, snapshot, server="http://localhost:6333"):
     autoprint=False,
     help={
         "wait": "Wait till it finishes to return Default: True",
-        "server": "Server address of qdrant default: 'http://localhost:6333",
+        "server": "Server address of qdrant default: 'http://localhost:6333'",
         "format": "output format of the response [JSON|YAML]",
     },
     optional=['wait', 'format','server']
@@ -651,7 +651,7 @@ def create_full_snapshot(c, wait=True, server="http://localhost:6333", format="j
     help={
         "snapshot":"The name of the snapshot to delete",
         "wait": "Wait till it finishes to return Default: True",
-        "server": "Server address of qdrant default: 'http://localhost:6333",
+        "server": "Server address of qdrant default: 'http://localhost:6333'",
         "format": "output format of the response [JSON|YAML]",
     },
     optional=['wait', 'format','server']
@@ -681,7 +681,7 @@ def delete_full_snapshot(c, snapshot, wait=True, server="http://localhost:6333",
         "location": "The path on the file system or url to find the snapshot at",
         "priority": "One of either {replica, snapshot, no_sync} Defaults: 'replica'",
         "wait": "Wait till it finishes to return Default: True",
-        "server": "Server address of qdrant default: 'http://localhost:6333",
+        "server": "Server address of qdrant default: 'http://localhost:6333'",
         "format": "output format of the response [JSON|YAML]",
     },
     optional=['wait','priority', 'format','server']
@@ -715,7 +715,7 @@ def recover_from_snapshot(c, collection, location, priority="replica", wait=True
         "collection":"The name of the colleciton and shard to list snapshots for",
         "shard": "The shard we want to list snapshots for",
         "wait": "Wait till it finishes to return Default: True",
-        "server": "Server address of qdrant default: 'http://localhost:6333",
+        "server": "Server address of qdrant default: 'http://localhost:6333'",
         "format": "output format of the response [JSON|YAML]",
     },
     optional=['wait', 'format','server']
@@ -748,7 +748,7 @@ def list_shard_snapshots(c, collection, shard, wait=True, server="http://localho
         "collection":"The name of the colleciton to snapshot a shard of",
         "shard": "What we want to call this new shard",
         "wait": "Wait till it finishes to return Default: True",
-        "server": "Server address of qdrant default: 'http://localhost:6333",
+        "server": "Server address of qdrant default: 'http://localhost:6333'",
         "format": "output format of the response [JSON|YAML]",
     },
     optional=['wait', 'format','server']
@@ -782,7 +782,7 @@ def create_shard_snapshot(c, collection, shard, wait=True, server="http://localh
         "snapshot": "The snapshot for the shard in the collection to delete",
         "shard": "The shard we want to remove",
         "wait": "Wait till it finishes to return Default: True",
-        "server": "Server address of qdrant default: 'http://localhost:6333",
+        "server": "Server address of qdrant default: 'http://localhost:6333'",
         "format": "output format of the response [JSON|YAML]",
     },
     optional=['wait', 'format','server']
@@ -818,7 +818,7 @@ def delete_shard_snapshot(c, collection, snapshot, shard, wait=True, server="htt
         "location": "The path on the file system or url to find the snapshot at",
         "priority": "One of either {replica, snapshot, no_sync} Defaults: 'replica'",
         "wait": "Wait till it finishes to return Default: True",
-        "server": "Server address of qdrant default: 'http://localhost:6333",
+        "server": "Server address of qdrant default: 'http://localhost:6333'",
         "format": "output format of the response [JSON|YAML]",
     },
     optional=['wait', 'format','server']
