@@ -20,6 +20,9 @@ except ImportError:
     from yaml import Loader, Dumper
 
 
+timeout = None
+
+
 def p_log(msg, severity="info"):
     """
     This function will output to the console useful information.
@@ -28,6 +31,7 @@ def p_log(msg, severity="info"):
     print("%s: %s. (%s)" % (severity.upper(), msg, run_time), file=sys.stderr)
 
 @task(
+    autoprint=False,
     help={
         "server": "Server address of qdrant default: 'http://localhost:6333",
         "format": "output format of the response [JSON|YAML]",
@@ -52,11 +56,12 @@ def get_cluster(c, server="http://localhost:6333", format="json"):
         exit(-1)
     except Exception:
         print(f"Error fetching cluster information for: {server}\n")
-        traceback.print_exc(file=sys.stdout)
+        traceback.print_exc(file=sys.stderr)
         exit(-2)
         
         
 @task(
+    autoprint=False,
     help={
         "peer": "The peer to remove from the cluster",
         "server": "Server address of qdrant default: 'http://localhost:6333",
@@ -82,11 +87,12 @@ def delete_cluster_peer(c, peer, server="http://localhost:6333", format="json"):
         exit(-1)
     except Exception:
         print(f"Error fetching cluster information for: {server}\n")
-        traceback.print_exc(file=sys.stdout)
+        traceback.print_exc(file=sys.stderr)
         exit(-2)
         
         
 @task(
+    autoprint=False,
     help={
         "collection": "The name or id of the collection we want to get cluster information about",
         "server": "Server address of qdrant default: 'http://localhost:6333",
@@ -112,10 +118,11 @@ def get_collection_cluster(c, collection, server="http://localhost:6333", format
         exit(-1)
     except Exception:
         print(f"Error fetching cluster collection information for: {server}/{collection}\n")
-        traceback.print_exc(file=sys.stdout)
+        traceback.print_exc(file=sys.stderr)
         exit(-2)
         
 @task(
+    autoprint=False,
     help={
         "server": "Server address of qdrant default: 'http://localhost:6333",
         "format": "output format of the response [JSON|YAML]",
@@ -128,7 +135,7 @@ def get_collections(c,  server="http://localhost:6333", format="json"):
     """
     server = os.environ.get("QDRANT_SERVER",server)
     try:
-        client = qdrant_client.QdrantClient(server,timeout=1000)
+        client = qdrant_client.QdrantClient(server,timeout=timeout)
         response = client.get_collections()
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
@@ -136,11 +143,12 @@ def get_collections(c,  server="http://localhost:6333", format="json"):
         exit(-1)
     except Exception:
         print(f"Error fetching collections: GET {server}/collections\n")
-        traceback.print_exc(file=sys.stdout)
+        traceback.print_exc(file=sys.stderr)
         exit(-2)
         
         
 @task(
+    autoprint=False,
     help={
         "collection": "The name or id of the collection we want to get cluster information about",
         "server": "Server address of qdrant default: 'http://localhost:6333",
@@ -156,7 +164,7 @@ def get_collection(c,  collection, server="http://localhost:6333", format="json"
     server = os.environ.get("QDRANT_SERVER",server)
 
     try:
-        client = qdrant_client.QdrantClient(server,timeout=1000)
+        client = qdrant_client.QdrantClient(server,timeout=timeout)
         response = client.get_collection(
             collection_name=collection
         )
@@ -166,11 +174,12 @@ def get_collection(c,  collection, server="http://localhost:6333", format="json"
         exit(-1)
     except Exception:
         print(f"Error fetching collection: GET {server}/collections/{collection}\n")
-        traceback.print_exc(file=sys.stdout)
+        traceback.print_exc(file=sys.stderr)
         exit(-2)
 
 
 @task(
+    autoprint=False,
     help={
         "collection": "The name of the collection we want to remove",
         "server": "Server address of qdrant default: 'http://localhost:6333",
@@ -186,7 +195,7 @@ def delete_collection(c,  collection, server="http://localhost:6333", format="js
     server = os.environ.get("QDRANT_SERVER",server)
 
     try:
-        client = qdrant_client.QdrantClient(server,timeout=1000)
+        client = qdrant_client.QdrantClient(server,timeout=timeout)
         response = client.delete_collection(
             collection_name=collection
         )
@@ -196,10 +205,11 @@ def delete_collection(c,  collection, server="http://localhost:6333", format="js
         exit(-1)
     except Exception:
         print(f"Error deleteing collection: DELETE {server}/collections/{collection}\n")
-        traceback.print_exc(file=sys.stdout)
+        traceback.print_exc(file=sys.stderr)
         exit(-2)
 
 @task(
+    autoprint=False,
     help={
         "collection": "The name of the collection we want to remove",
         "vectors": "The vectors configuration in JSON format",
@@ -258,7 +268,7 @@ def create_collection(c,
     """
     server = os.environ.get("QDRANT_SERVER",server)
     try:
-        client = qdrant_client.QdrantClient(server,timeout=1000)
+        client = qdrant_client.QdrantClient(server,timeout=timeout)
         response = client.create_collection(
             collection_name=collection,
             vectors_config=vectors,
@@ -281,11 +291,12 @@ def create_collection(c,
         exit(-1)
     except Exception:
         print(f"Error create collection: PUT {server}/collections/{collection}\n")
-        traceback.print_exc(file=sys.stdout)
+        traceback.print_exc(file=sys.stderr)
         exit(-2)
 
 
 @task(
+    autoprint=False,
     help={
         "collection": "The collection to create an index for",
         "field": "Field we wish to index",
@@ -304,7 +315,7 @@ def create_payload_index(c, collection, field, schema, type, order, wait=True, s
     """
     server = os.environ.get("QDRANT_SERVER",server)
     try:
-        client = qdrant_client.QdrantClient(server,timeout=1000)
+        client = qdrant_client.QdrantClient(server,timeout=timeout)
         response = client.create_payload_index(
             collection_name=collection,
             field_name=field,
@@ -319,11 +330,12 @@ def create_payload_index(c, collection, field, schema, type, order, wait=True, s
         exit(-1)
     except Exception:
         print(f"Error creating payload index\n")
-        traceback.print_exc(file=sys.stdout)
+        traceback.print_exc(file=sys.stderr)
         exit(-2)
 
 
 @task(
+    autoprint=False,
     help={
         "collection": "The collection to create an index for",
         "field": "Field we wish to index",
@@ -340,7 +352,7 @@ def delete_payload_index(c, collection, field, order, wait=True, server="http://
     """
     server = os.environ.get("QDRANT_SERVER",server)
     try:
-        client = qdrant_client.QdrantClient(server,timeout=1000)
+        client = qdrant_client.QdrantClient(server,timeout=timeout)
         response = client.create_payload_index(
             collection_name=collection,
             field_name=field,
@@ -355,11 +367,12 @@ def delete_payload_index(c, collection, field, order, wait=True, server="http://
         exit(-1)
     except Exception:
         print(f"Error deleteing payload index\n")
-        traceback.print_exc(file=sys.stdout)
+        traceback.print_exc(file=sys.stderr)
         exit(-2)
 
 
 @task(
+    autoprint=False,
     help={
         "server": "Server address of qdrant default: 'http://localhost:6333",
         "format": "output format of the response [JSON|YAML]",
@@ -373,7 +386,7 @@ def get_aliases(c, server="http://localhost:6333", format="json"):
     
     server = os.environ.get("QDRANT_SERVER",server)
     try:
-        client = qdrant_client.QdrantClient(server,timeout=1000)
+        client = qdrant_client.QdrantClient(server,timeout=timeout)
         response = client.get_aliases()
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
@@ -381,11 +394,12 @@ def get_aliases(c, server="http://localhost:6333", format="json"):
         exit(-1)
     except Exception:
         print(f"Error getting aliases\n")
-        traceback.print_exc(file=sys.stdout)
+        traceback.print_exc(file=sys.stderr)
         exit(-2)
         
         
 @task(
+    autoprint=False,
     help={
         "server": "Server address of qdrant default: 'http://localhost:6333",
         "format": "output format of the response [JSON|YAML]",
@@ -400,7 +414,7 @@ def get_locks(c, server="http://localhost:6333", format="json"):
     server = os.environ.get("QDRANT_SERVER",server)
 
     try:
-        client = qdrant_client.QdrantClient(server,timeout=1000)
+        client = qdrant_client.QdrantClient(server,timeout=timeout)
         response = client.get_locks()
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
@@ -408,10 +422,11 @@ def get_locks(c, server="http://localhost:6333", format="json"):
         exit(-1)
     except Exception:
         print(f"Error fetching loks on {server}\n")
-        traceback.print_exc(file=sys.stdout)
+        traceback.print_exc(file=sys.stderr)
         exit(-2)
 
 @task(
+    autoprint=False,
     help={
         "collection": "Give a specific collection to list snapshots for or ommit for all",
         "server": "Server address of qdrant default: 'http://localhost:6333",
@@ -427,7 +442,7 @@ def get_snapshots(c, collection=None, server="http://localhost:6333", format="js
     server = os.environ.get("QDRANT_SERVER",server)
 
     try:
-        client = qdrant_client.QdrantClient(server,timeout=1000)
+        client = qdrant_client.QdrantClient(server,timeout=timeout)
         
         snapshots = {}
         if collection is None:
@@ -452,10 +467,11 @@ def get_snapshots(c, collection=None, server="http://localhost:6333", format="js
         exit(-1)
     except Exception:
         print(f"Error fetching snapshots on {server}\n")
-        traceback.print_exc(file=sys.stdout)
+        traceback.print_exc(file=sys.stderr)
         exit(-2)
 
 @task(
+    autoprint=False,
     help={
         "collection": "Give a specific collection to snapshot",
         "wait": "Wait till it finishes to return Default: True",
@@ -472,7 +488,7 @@ def snapshot_collection(c, collection, wait=True, server="http://localhost:6333"
     server = os.environ.get("QDRANT_SERVER",server)
 
     try:
-        client = qdrant_client.QdrantClient(server,timeout=1000)
+        client = qdrant_client.QdrantClient(server,timeout=timeout)
         status = client.create_snapshot(
             collection_name=collection,
             wait=(wait==True)
@@ -484,10 +500,11 @@ def snapshot_collection(c, collection, wait=True, server="http://localhost:6333"
         exit(-1)
     except Exception:
         print(f"Error snapshoting collection {server}\n")
-        traceback.print_exc(file=sys.stdout)
+        traceback.print_exc(file=sys.stderr)
         exit(-2)
         
 @task(
+    autoprint=False,
     help={
         "collection": "Give a specific collection to snapshot",
         "snapshot": "The name of the snapshot to download from the specified collection",
@@ -514,11 +531,12 @@ def download_snapshot(c, collection, snapshot, wait=True, server="http://localho
         exit(-1)
     except Exception:
         print(f"Error downloading snapshot: {url}\n")
-        traceback.print_exc(file=sys.stdout)
+        traceback.print_exc(file=sys.stderr)
         exit(-2)
     
         
 @task(
+    autoprint=False,
     help={
         "snapshot":"The name of the snapshot to delete",
         "collection": "Collection we will delete a snapshot for",
@@ -545,11 +563,12 @@ def delete_snapshot(c, snapshot=None, collection=None, server="http://localhost:
         exit(-1)
     except Exception:
         print(f"Error deleteing snapshots: {url}\n")
-        traceback.print_exc(file=sys.stdout)
+        traceback.print_exc(file=sys.stderr)
         exit(-2)
 
 
 @task(
+    autoprint=False,
     help={
         "server": "Server address of qdrant default: 'http://localhost:6333",
         "format": "output format of the response [JSON|YAML]",
@@ -562,7 +581,7 @@ def list_full_snapshots(c, server="http://localhost:6333", format="json"):
     """
     server = os.environ.get("QDRANT_SERVER",server)
     try:
-        client = qdrant_client.QdrantClient(server,timeout=1000)
+        client = qdrant_client.QdrantClient(server,timeout=timeout)
         response = client.list_full_snapshots();
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
@@ -570,11 +589,12 @@ def list_full_snapshots(c, server="http://localhost:6333", format="json"):
         exit(-1)
     except Exception:
         print(f"Error listing full snapshots: {url}\n")
-        traceback.print_exc(file=sys.stdout)
+        traceback.print_exc(file=sys.stderr)
         exit(-2)
         
         
 @task(
+    autoprint=False,
     help={
         "wait": "Wait till it finishes to return Default: True",
         "server": "Server address of qdrant default: 'http://localhost:6333",
@@ -588,7 +608,7 @@ def create_full_snapshot(c, wait=True, server="http://localhost:6333", format="j
     """
     server = os.environ.get("QDRANT_SERVER",server)
     try:
-        client = qdrant_client.QdrantClient(server,timeout=1000)
+        client = qdrant_client.QdrantClient(server,timeout=timeout)
         response = client.create_full_snapshot(wait=(wait==True))
         out_formatter(response, format) 
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
@@ -596,11 +616,12 @@ def create_full_snapshot(c, wait=True, server="http://localhost:6333", format="j
         exit(-1)
     except Exception:
         print(f"Error creating full snapshots: {url}\n")
-        traceback.print_exc(file=sys.stdout)
+        traceback.print_exc(file=sys.stderr)
         exit(-2)
 
 
 @task(
+    autoprint=False,
     help={
         "snapshot":"The name of the snapshot to delete",
         "wait": "Wait till it finishes to return Default: True",
@@ -615,7 +636,7 @@ def delete_full_snapshot(c, snapshot, wait=True, server="http://localhost:6333",
     """
     server = os.environ.get("QDRANT_SERVER",server)
     try:
-        client = qdrant_client.QdrantClient(server,timeout=1000)
+        client = qdrant_client.QdrantClient(server,timeout=timeout)
         response = client.delete_full_snapshot(snapshot_name=snapshot, wait=(wait==True))
         out_formatter(response, format) 
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
@@ -623,11 +644,12 @@ def delete_full_snapshot(c, snapshot, wait=True, server="http://localhost:6333",
         exit(-1)
     except Exception:
         print(f"Error deleteing full snapshot: {server}/snapshots/{snapshot}\n")
-        traceback.print_exc(file=sys.stdout)
+        traceback.print_exc(file=sys.stderr)
         exit(-2)
    
    
 @task(
+    autoprint=False,
     help={
         "collection":"The name of the colleciton to recover",
         "location": "The path on the file system or url to find the snapshot at",
@@ -644,7 +666,7 @@ def recover_from_snapshot(c, collection, location, priority="replica", wait=True
     """
     server = os.environ.get("QDRANT_SERVER",server)
     try:
-        client = qdrant_client.QdrantClient(server,timeout=1000)
+        client = qdrant_client.QdrantClient(server,timeout=timeout)
         response = client.recover_snapshot(
             collection_name=collection,
             location=location,
@@ -657,11 +679,12 @@ def recover_from_snapshot(c, collection, location, priority="replica", wait=True
         exit(-1)
     except Exception:
         print(f"Error recovering collection: {collection} from snapshot: {location}\n")
-        traceback.print_exc(file=sys.stdout)
+        traceback.print_exc(file=sys.stderr)
         exit(-2)
    
    
 @task(
+    autoprint=False,
     help={
         "collection":"The name of the colleciton and shard to list snapshots for",
         "shard": "The shard we want to list snapshots for",
@@ -677,7 +700,7 @@ def list_shard_snapshots(c, collection, shard, wait=True, server="http://localho
     """
     server = os.environ.get("QDRANT_SERVER",server)
     try:
-        client = qdrant_client.QdrantClient(server,timeout=1000)
+        client = qdrant_client.QdrantClient(server,timeout=timeout)
         response = client.list_shard_snapshots(
             collection_name=collection,
             shard_id=shard,
@@ -689,11 +712,12 @@ def list_shard_snapshots(c, collection, shard, wait=True, server="http://localho
         exit(-1)
     except Exception:
         print(f"Error listing shards for collection: {collection}\n")
-        traceback.print_exc(file=sys.stdout)
+        traceback.print_exc(file=sys.stderr)
         exit(-2)
 
 
 @task(
+    autoprint=False,
     help={
         "collection":"The name of the colleciton to snapshot a shard of",
         "shard": "What we want to call this new shard",
@@ -709,7 +733,7 @@ def create_shard_snapshot(c, collection, shard, wait=True, server="http://localh
     """
     server = os.environ.get("QDRANT_SERVER",server)
     try:
-        client = qdrant_client.QdrantClient(server,timeout=1000)
+        client = qdrant_client.QdrantClient(server,timeout=timeout)
         response = client.create_shard_snapshot(
             collection_name=collection,
             shard_id=shard,
@@ -721,11 +745,12 @@ def create_shard_snapshot(c, collection, shard, wait=True, server="http://localh
         exit(-1)
     except Exception:
         print(f"Error creating shard snapshot: {collection}\n")
-        traceback.print_exc(file=sys.stdout)
+        traceback.print_exc(file=sys.stderr)
         exit(-2)
 
  
 @task(
+    autoprint=False,
     help={
         "collection":"The name of the colleciton remove te shard snapshot from",
         "snapshot": "The snapshot for the shard in the collection to delete",
@@ -742,7 +767,7 @@ def delete_shard_snapshot(c, collection, snapshot, shard, wait=True, server="htt
     """
     server = os.environ.get("QDRANT_SERVER",server)
     try:
-        client = qdrant_client.QdrantClient(server,timeout=1000)
+        client = qdrant_client.QdrantClient(server,timeout=timeout)
         response = client.delete_shard_snapshot(
             collection_name=collection,
             snapshot_id=snapshot,
@@ -755,11 +780,12 @@ def delete_shard_snapshot(c, collection, snapshot, shard, wait=True, server="htt
         exit(-1)
     except Exception:
         print(f"Error deleteing shard snapshot: {collection}/{shard}/{snapshot}\n")
-        traceback.print_exc(file=sys.stdout)
+        traceback.print_exc(file=sys.stderr)
         exit(-2)
 
 
 @task(
+    autoprint=False,
     help={
         "collection":"The name of the colleciton for the shard to recover",
         "shard": "What we want to recover",
@@ -777,7 +803,7 @@ def recover_shard_snapshot(c, collection, shard, location, priority='replica', w
     """
     server = os.environ.get("QDRANT_SERVER",server)
     try:
-        client = qdrant_client.QdrantClient(server,timeout=1000)
+        client = qdrant_client.QdrantClient(server,timeout=timeout)
         response = client.recover_shard_snapshot(
             collection_name=collection,
             shard_id=shard,
@@ -791,7 +817,7 @@ def recover_shard_snapshot(c, collection, shard, location, priority='replica', w
         exit(-1)
     except Exception:
         print(f"Error recovering shard: {shard} for collection: {collection} from: {location}:{priority}\n")
-        traceback.print_exc(file=sys.stdout)
+        traceback.print_exc(file=sys.stderr)
         exit(-2)
    
 
