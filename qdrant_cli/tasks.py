@@ -347,7 +347,6 @@ def create_payload_index(
     help={
         "collection": "The collection to create an index for",
         "field": "Field we wish to index",
-        "order": "The order of the index",
         "wait": "Wait till it finishes to return Default: True",
         "server": "Server address of qdrant default: 'http://localhost:6333'",
         "format": "output format of the response [JSON|YAML]",
@@ -372,8 +371,6 @@ def delete_payload_index(
         response = client.create_payload_index(
             collection_name=collection,
             field_name=field,
-            field_schema=schema,
-            field_type=type,
             wait=(wait == True),
             ordering=order,
         )
@@ -528,7 +525,7 @@ def snapshot_collection(
         "snapshot": "The name of the snapshot to download from the specified collection",
         "server": "Server address of qdrant default: 'http://localhost:6333'",
     },
-    optional=["wait", "format", "server"],
+    optional=["server"],
 )
 def download_snapshot(c, collection, snapshot, server="http://localhost:6333"):
     """
