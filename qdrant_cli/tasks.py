@@ -606,8 +606,8 @@ def delete_snapshot(
     except requests.exceptions.ConnectionError as e:
         print(f"Failed to connect to {server}: {e}")
         return -1
-    except Exception:
-        print(f"Error deleteing snapshots: {url}\n")
+    except Exception as e:
+        print(f"Error deleteing snapshots: {e}\n")
         traceback.print_exc(file=sys.stderr)
         return -2
 
@@ -632,8 +632,8 @@ def list_full_snapshots(c, server="http://localhost:6333", format="json"):
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
         print(f"Failed to connect to {server}: {e}")
         return -1
-    except Exception:
-        print(f"Error listing full snapshots: {url}\n")
+    except Exception as e:
+        print(f"Error listing full snapshots: {e}\n")
         traceback.print_exc(file=sys.stderr)
         return -2
 
@@ -680,8 +680,8 @@ def create_full_snapshot(c, wait=True, server="http://localhost:6333", format="j
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
         print(f"Failed to connect to {server}: {e}")
         return -1
-    except Exception:
-        print(f"Error creating full snapshots: {url}\n")
+    except Exception as e:
+        print(f"Error creating full snapshots: {e}\n")
         traceback.print_exc(file=sys.stderr)
         return -2
 
