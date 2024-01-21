@@ -24,6 +24,21 @@ The first thing you need to do is install qdrant-cli.  Currently the simplest wa
 pip install git+https://git@github.com/analogrithems/qdrant-cli.git
 ```
 
+
+### port-forward
+
+Yurts uses kubernetes to run our platform.  You will most likely need to port-forward to kubernetes to run these commands
+
+```
+$ kubectl port-forward -n qdrant svc/qdrant-yurts 6333 6334
+```
+
+Then set your QDRANT_SERVER environment variable to 
+
+```
+$ export QDRANT_SERVER=http://localhost:6333
+```
+
 ## Usage 
 You can see all the commands with qdrant --list
 
