@@ -48,11 +48,11 @@ def get_cluster(c, server="http://localhost:6333", format="json"):
         out_formatter(response["result"], format)
     except requests.exceptions.ConnectionError as e:
         print(f"Failed to connect to {server}: {e}")
-        sys.exit(-1)
+        return -1
     except Exception:
         print(f"Error fetching cluster information for: {server}\n")
         traceback.print_exc(file=sys.stderr)
-        sys.exit(-2)
+        return -2
 
 
 @task(
@@ -79,11 +79,11 @@ def delete_cluster_peer(c, peer, server="http://localhost:6333", format="json"):
         out_formatter(response["result"], format)
     except requests.exceptions.ConnectionError as e:
         print(f"Failed to connect to {server}: {e}")
-        sys.exit(-1)
+        return -1
     except Exception:
         print(f"Error fetching cluster information for: {server}\n")
         traceback.print_exc(file=sys.stderr)
-        sys.exit(-2)
+        return -2
 
 
 @task(
@@ -112,13 +112,13 @@ def get_collection_cluster(
         out_formatter(response["result"], format)
     except requests.exceptions.ConnectionError as e:
         print(f"Failed to connect to {server}: {e}")
-        sys.exit(-1)
+        return -1
     except Exception:
         print(
             f"Error fetching cluster collection information for: {server}/{collection}\n"
         )
         traceback.print_exc(file=sys.stderr)
-        sys.exit(-2)
+        return -2
 
 
 @task(
@@ -140,11 +140,11 @@ def get_collections(c, server="http://localhost:6333", format="json"):
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
         print(f"Failed to connect to {server}: {e}")
-        sys.exit(-1)
+        return -1
     except Exception:
         print(f"Error fetching collections: GET {server}/collections\n")
         traceback.print_exc(file=sys.stderr)
-        sys.exit(-2)
+        return -2
 
 
 @task(
@@ -169,11 +169,11 @@ def get_collection(c, collection, server="http://localhost:6333", format="json")
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
         print(f"Failed to connect to {server}: {e}")
-        sys.exit(-1)
+        return -1
     except Exception:
         print(f"Error fetching collection: GET {server}/collections/{collection}\n")
         traceback.print_exc(file=sys.stderr)
-        sys.exit(-2)
+        return -2
 
 
 @task(
@@ -198,11 +198,11 @@ def delete_collection(c, collection, server="http://localhost:6333", format="jso
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
         print(f"Failed to connect to {server}: {e}")
-        sys.exit(-1)
+        return -1
     except Exception:
         print(f"Error deleteing collection: DELETE {server}/collections/{collection}\n")
         traceback.print_exc(file=sys.stderr)
-        sys.exit(-2)
+        return -2
 
 
 @task(
@@ -286,11 +286,11 @@ def create_collection(
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
         print(f"Failed to connect to {server}: {e}")
-        sys.exit(-1)
+        return -1
     except Exception:
         print(f"Error create collection: PUT {server}/collections/{collection}\n")
         traceback.print_exc(file=sys.stderr)
-        sys.exit(-2)
+        return -2
 
 
 @task(
@@ -335,11 +335,11 @@ def create_payload_index(
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
         print(f"Failed to connect to {server}: {e}")
-        sys.exit(-1)
+        return -1
     except Exception:
         print(f"Error creating payload index\n")
         traceback.print_exc(file=sys.stderr)
-        sys.exit(-2)
+        return -2
 
 
 @task(
@@ -380,11 +380,11 @@ def delete_payload_index(
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
         print(f"Failed to connect to {server}: {e}")
-        sys.exit(-1)
+        return -1
     except Exception:
         print(f"Error deleteing payload index\n")
         traceback.print_exc(file=sys.stderr)
-        sys.exit(-2)
+        return -2
 
 
 @task(
@@ -407,11 +407,11 @@ def get_aliases(c, server="http://localhost:6333", format="json"):
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
         print(f"Failed to connect to {server}: {e}")
-        sys.exit(-1)
+        return -1
     except Exception:
         print(f"Error getting aliases\n")
         traceback.print_exc(file=sys.stderr)
-        sys.exit(-2)
+        return -2
 
 
 @task(
@@ -435,11 +435,11 @@ def get_locks(c, server="http://localhost:6333", format="json"):
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
         print(f"Failed to connect to {server}: {e}")
-        sys.exit(-1)
+        return -1
     except Exception:
         print(f"Error fetching loks on {server}\n")
         traceback.print_exc(file=sys.stderr)
-        sys.exit(-2)
+        return -2
 
 
 @task(
@@ -481,11 +481,11 @@ def get_snapshots(c, collection=None, server="http://localhost:6333", format="js
 
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
         print(f"Failed to connect to {server}: {e}")
-        sys.exit(-1)
+        return -1
     except Exception:
         print(f"Error fetching snapshots on {server}\n")
         traceback.print_exc(file=sys.stderr)
-        sys.exit(-2)
+        return -2
 
 
 @task(
@@ -514,11 +514,11 @@ def snapshot_collection(
 
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
         print(f"Failed to connect to {server}: {e}")
-        sys.exit(-1)
+        return -1
     except Exception:
         print(f"Error snapshoting collection {server}\n")
         traceback.print_exc(file=sys.stderr)
-        sys.exit(-2)
+        return -2
 
 
 @task(
@@ -545,11 +545,11 @@ def download_snapshot(c, collection, snapshot, server="http://localhost:6333"):
         return 0
     except requests.exceptions.ConnectionError as e:
         print(f"Failed to connect to {server}: {e}")
-        sys.exit(-1)
+        return -1
     except Exception:
         print(f"Error downloading snapshot: {url}\n")
         traceback.print_exc(file=sys.stderr)
-        sys.exit(-2)
+        return -2
 
 
 @task(
@@ -577,11 +577,11 @@ def delete_snapshot(
         out_formatter(response["result"], format)
     except requests.exceptions.ConnectionError as e:
         print(f"Failed to connect to {server}: {e}")
-        sys.exit(-1)
+        return -1
     except Exception:
         print(f"Error deleteing snapshots: {url}\n")
         traceback.print_exc(file=sys.stderr)
-        sys.exit(-2)
+        return -2
 
 
 @task(
@@ -603,11 +603,11 @@ def list_full_snapshots(c, server="http://localhost:6333", format="json"):
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
         print(f"Failed to connect to {server}: {e}")
-        sys.exit(-1)
+        return -1
     except Exception:
         print(f"Error listing full snapshots: {url}\n")
         traceback.print_exc(file=sys.stderr)
-        sys.exit(-2)
+        return -2
 
 
 @task(
@@ -632,11 +632,11 @@ def download_full_snapshot(c, snapshot, server="http://localhost:6333"):
             f.write(response.content)
     except requests.exceptions.ConnectionError as e:
         print(f"Failed to connect to {server}: {e}")
-        sys.exit(-1)
+        return -1
     except Exception:
         print(f"Error downloading full snapshot: {url}\n")
         traceback.print_exc(file=sys.stderr)
-        sys.exit(-2)
+        return -2
 
 
 @task(
@@ -659,11 +659,11 @@ def create_full_snapshot(c, wait=True, server="http://localhost:6333", format="j
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
         print(f"Failed to connect to {server}: {e}")
-        sys.exit(-1)
+        return -1
     except Exception:
         print(f"Error creating full snapshots: {url}\n")
         traceback.print_exc(file=sys.stderr)
-        sys.exit(-2)
+        return -2
 
 
 @task(
@@ -691,11 +691,11 @@ def delete_full_snapshot(
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
         print(f"Failed to connect to {server}: {e}")
-        sys.exit(-1)
+        return -1
     except Exception:
         print(f"Error deleteing full snapshot: {server}/snapshots/{snapshot}\n")
         traceback.print_exc(file=sys.stderr)
-        sys.exit(-2)
+        return -2
 
 
 @task(
@@ -734,11 +734,11 @@ def recover_from_snapshot(
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
         print(f"Failed to connect to {server}: {e}")
-        sys.exit(-1)
+        return -1
     except Exception:
         print(f"Error recovering collection: {collection} from snapshot: {location}\n")
         traceback.print_exc(file=sys.stderr)
-        sys.exit(-2)
+        return -2
 
 
 @task(
@@ -767,11 +767,11 @@ def list_shard_snapshots(
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
         print(f"Failed to connect to {server}: {e}")
-        sys.exit(-1)
+        return -1
     except Exception:
         print(f"Error listing shards for collection: {collection}\n")
         traceback.print_exc(file=sys.stderr)
-        sys.exit(-2)
+        return -2
 
 
 @task(
@@ -800,11 +800,11 @@ def create_shard_snapshot(
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
         print(f"Failed to connect to {server}: {e}")
-        sys.exit(-1)
+        return -1
     except Exception:
         print(f"Error creating shard snapshot: {collection}\n")
         traceback.print_exc(file=sys.stderr)
-        sys.exit(-2)
+        return -2
 
 
 @task(
@@ -843,11 +843,11 @@ def delete_shard_snapshot(
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
         print(f"Failed to connect to {server}: {e}")
-        sys.exit(-1)
+        return -1
     except Exception:
         print(f"Error deleteing shard snapshot: {collection}/{shard}/{snapshot}\n")
         traceback.print_exc(file=sys.stderr)
-        sys.exit(-2)
+        return -2
 
 
 @task(
@@ -889,13 +889,13 @@ def recover_shard_snapshot(
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
         print(f"Failed to connect to {server}: {e}")
-        sys.exit(-1)
+        return -1
     except Exception:
         print(
             f"Error recovering shard: {shard} for collection: {collection} from: {location}:{priority}\n"
         )
         traceback.print_exc(file=sys.stderr)
-        sys.exit(-2)
+        return -2
 
 
 def out_formatter(output=None, format="json"):
