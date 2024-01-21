@@ -2,7 +2,7 @@
 name = "qdrant-cli"
 version = "0.1.0"
 description = ""
-authors = ["Aaron Collins <aaron@yurts.ai>"]
+authors = ["Aaron Collins <aaron.collinsa@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
