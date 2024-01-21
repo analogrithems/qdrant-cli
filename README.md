@@ -25,10 +25,12 @@ Subcommands:
 
   create-collection        Create a collection with all the fixins
   create-full-snapshot     This will create a full snapshot of the server
+  create-payload-index     Create an index on a payload
   create-shard-snapshot    This will create a new shard of a given collection
   delete-cluster-peer      Delete a peer in the cluster
   delete-collection        Delete a specified collectoin
   delete-full-snapshot     This will delete a full snapshot of the server
+  delete-payload-index     Delete an index on a payload
   delete-shard-snapshot    This will delete the snapshot for a given collection/shard
   delete-snapshot          Delete a specific snapshot
   download-snapshot        Download a specific snapshot from a collection
