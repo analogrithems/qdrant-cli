@@ -8,8 +8,8 @@ probably happen if you do not know what you are doing.
 
 Please make sure you have the following installed before install reform
 
-* Python 3.8
-* qdrant server v.1.7.3 
+* Python 3.8+
+* qdrant server v.1.7.3+
 
 ## Getting Started
 The first thing you need to do is install qdrant-cli.  Currently the simplest way to do this is 
