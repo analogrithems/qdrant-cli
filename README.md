@@ -1,6 +1,6 @@
 # qdrantCLI
 
-This is a cli client for qdrant.  It's designed to be a simple script that allows formatting output in json of yaml.
+This is a cli client for qdrant.  It's designed to be a simple script that allows formatting output in json or yaml.
 It's a work in progress so I wouldn't use this on a production system if you do not know what you are doing. Data loss will 
 probably happen if you do not know what you are doing.
 
@@ -10,6 +10,12 @@ Please make sure you have the following installed before install reform
 
 * Python 3.8+
 * qdrant server v.1.7.3+
+
+### Python Deps
+
+* requests
+* qdrant-client
+* pyinvoke
 
 ## Getting Started
 The first thing you need to do is install qdrant-cli.  Currently the simplest way to do this is 
@@ -81,20 +87,94 @@ Options:
   -w [INT], --write-consistency[=INT]       How many writes to confirm
 ```
 
+The responses are in json by default you if you pass the --format=yaml flag it will return results in YAML
+
+```
+$ qdrant get-cluster
+{
+  "consensus_thread_status": {
+    "consensus_thread_status": "working",
+    "last_update": "2024-01-21T00:40:12.487643457Z"
+  },
+  "message_send_failures": {
+    "http://qdrant-yurts-0.qdrant-yurts-headless:6335/": {
+      "count": 28,
+      "latest_error": "Error in closure supplied to transport channel pool: status: Unavailable, message: \"Failed to connect to http://qdrant-yurts-0.qdrant-yurts-headless:6335/, error: transport error\", details: [], metadata: MetadataMap { headers: {} }"
+    }
+  },
+  "peer_id": 7875359758390565,
+  "peers": {
+    "1237494046554172": {
+      "uri": "http://qdrant-yurts-0.qdrant-yurts-headless:6335/"
+    },
+    "3958396421676712": {
+      "uri": "http://qdrant-yurts-2.qdrant-yurts-headless:6335/"
+    },
+    "6172692231348117": {
+      "uri": "http://qdrant-yurts-1.qdrant-yurts-headless:6335/"
+    },
+    "7875359758390565": {
+      "uri": "http://qdrant-yurts-3.qdrant-yurts-headless:6335/"
+    }
+  },
+  "raft_info": {
+    "commit": 24605,
+    "is_voter": true,
+    "leader": 3958396421676712,
+    "pending_operations": 0,
+    "role": "Follower",
+    "term": 28
+  },
+  "status": "enabled"
+}
+```
+
+or in YAML
+
+```
+$ qdrant get-cluster --format=yaml
+consensus_thread_status:
+  consensus_thread_status: working
+  last_update: '2024-01-21T00:43:26.380192898Z'
+message_send_failures:
+  http://qdrant-yurts-0.qdrant-yurts-headless:6335/:
+    count: 28
+    latest_error: 'Error in closure supplied to transport channel pool: status: Unavailable,
+      message: "Failed to connect to http://qdrant-yurts-0.qdrant-yurts-headless:6335/,
+      error: transport error", details: [], metadata: MetadataMap { headers: {} }'
+peer_id: 7875359758390565
+peers:
+  '1237494046554172':
+    uri: http://qdrant-yurts-0.qdrant-yurts-headless:6335/
+  '3958396421676712':
+    uri: http://qdrant-yurts-2.qdrant-yurts-headless:6335/
+  '6172692231348117':
+    uri: http://qdrant-yurts-1.qdrant-yurts-headless:6335/
+  '7875359758390565':
+    uri: http://qdrant-yurts-3.qdrant-yurts-headless:6335/
+raft_info:
+  commit: 24605
+  is_voter: true
+  leader: 3958396421676712
+  pending_operations: 0
+  role: Follower
+  term: 28
+status: enabled
+```
 
 ## Learn more
 
 A lot of this based off of the qdrant-client api
-https://python-client.qdrant.tech/qdrant_client
+[https://python-client.qdrant.tech/qdrant_client](https://python-client.qdrant.tech/qdrant_client)
 
 Also the qdrant_remote code was very helpful in understanding the api
-https://github.com/qdrant/qdrant-client/blob/efb876fe3915dc5e2855f60a5617e940c84591e5/qdrant_client/qdrant_remote.py
+[https://github.com/qdrant/qdrant-client/blob/efb876fe3915dc5e2855f60a5617e940c84591e5/qdrant_client/qdrant_remote.py](https://github.com/qdrant/qdrant-client/blob/efb876fe3915dc5e2855f60a5617e940c84591e5/qdrant_client/qdrant_remote.py)
 
 Here's there OpenAPI link 
-https://qdrant.github.io/qdrant/redoc/index.html
+[https://qdrant.github.io/qdrant/redoc/index.html](https://qdrant.github.io/qdrant/redoc/index.html)
 
-Snapshots - https://qdrant.tech/documentation/concepts/snapshots/
+Snapshots - [https://qdrant.tech/documentation/concepts/snapshots/](https://qdrant.tech/documentation/concepts/snapshots/)
 
-Distributed cluster - https://qdrant.tech/documentation/guides/distributed_deployment/#cluster-scaling
+Distributed cluster - [https://qdrant.tech/documentation/guides/distributed_deployment/#cluster-scaling](https://qdrant.tech/documentation/guides/distributed_deployment/#cluster-scaling)
 
-PyInvoke Readme - https://docs.pyinvoke.org/_/downloads/en/latest/pdf/
+PyInvoke Readme - [https://docs.pyinvoke.org/_/downloads/en/latest/pdf/](https://docs.pyinvoke.org/_/downloads/en/latest/pdf/)
