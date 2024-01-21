@@ -1,7 +1,7 @@
 # qdrantCLI
 
 This is a cli client for qdrant.  It's designed to be a simple script that allows formatting output in json or yaml.
-It's a work in progress so I wouldn't use this on a production system if you do not know what you are doing. Data loss will 
+It's a work in progress so I wouldn't use this on a production system if you do not know what you are doing. Data loss will
 probably happen if you do not know what you are doing.
 
 ## Requirements
@@ -13,12 +13,13 @@ Please make sure you have the following installed before install reform
 
 ### Python Deps
 
-* requests
-* qdrant-client
-* pyinvoke
+* requests - common python module that you probably already have
+* qdrant-client - partial wrapper around the qdrant-api
+* pyinvoke - provides the simple task format
+* tqdm - Used for progress bar in downloading snapshots
 
 ## Getting Started
-The first thing you need to do is install qdrant-cli.  Currently the simplest way to do this is 
+The first thing you need to do is install qdrant-cli.  Currently the simplest way to do this is
 
 ```
 pip install git+https://git@github.com/analogrithems/qdrant-cli.git
@@ -33,13 +34,13 @@ Yurts uses kubernetes to run our platform.  You will most likely need to port-fo
 $ kubectl port-forward -n qdrant svc/qdrant-yurts 6333 6334
 ```
 
-Then set your QDRANT_SERVER environment variable to 
+Then set your QDRANT_SERVER environment variable to
 
 ```
 $ export QDRANT_SERVER=http://localhost:6333
 ```
 
-## Usage 
+## Usage
 You can see all the commands with qdrant --list
 
 ```
@@ -74,7 +75,7 @@ Subcommands:
 
 You can get deeper details about specific commands with the format `qdrant <subcommand> --help`
 
-*Example:* 
+*Example:*
 
 ```
 $ qdrant --help create-collection
@@ -185,7 +186,7 @@ A lot of this based off of the qdrant-client api
 Also the qdrant_remote code was very helpful in understanding the api
 [https://github.com/qdrant/qdrant-client/blob/efb876fe3915dc5e2855f60a5617e940c84591e5/qdrant_client/qdrant_remote.py](https://github.com/qdrant/qdrant-client/blob/efb876fe3915dc5e2855f60a5617e940c84591e5/qdrant_client/qdrant_remote.py)
 
-Here's there OpenAPI link 
+Here's there OpenAPI link
 [https://qdrant.github.io/qdrant/redoc/index.html](https://qdrant.github.io/qdrant/redoc/index.html)
 
 Snapshots - [https://qdrant.tech/documentation/concepts/snapshots/](https://qdrant.tech/documentation/concepts/snapshots/)

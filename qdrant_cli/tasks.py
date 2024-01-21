@@ -1,5 +1,6 @@
 import json
 import os
+import gzip
 import sys
 import time
 import traceback
@@ -9,12 +10,17 @@ try:
 except ImportError:
     from yaml import Dumper
 
+from yaml import dump
+from urllib.parse import urlparse
+
+from tqdm import tqdm
 import qdrant_client
 import requests
 from invoke import task
-from yaml import dump
 
 timeout = None
+SNAPSHOT_DOWNLOAD_PATH = f"./QdrantSnapshots"
+## Helper functions first
 
 
 def p_log(msg, severity="info"):
@@ -23,6 +29,41 @@ def p_log(msg, severity="info"):
     """
     run_time = time.process_time()
     print("%s: %s. (%s)" % (severity.upper(), msg, run_time), file=sys.stderr)
+
+
+def _fetch_snapshot(url, download_path):
+    """
+    This is a gernic
+    """
+    try:
+        response = requests.get(url, stream=True)
+        total_size = int(response.headers.get("content-length", 0))
+        block_size = 1024 * 32
+
+        with tqdm(
+            total=total_size / (32 * 1024.0),
+            unit="B",
+            unit_scale=True,
+            unit_divisor=1024,
+        ) as progress_bar:
+            p_log(f"Downloading '{url}' to '{download_path}'")
+            if not os.path.exists(os.path.dirname(download_path)):
+                print(f"Making directory: {os.path.dirname(download_path)}")
+                os.makedirs(os.path.dirname(download_path), mode=0o777, exist_ok=True)
+            with open(download_path, "wb") as file:
+                for data in response.iter_content(block_size):
+                    progress_bar.update(len(data))
+                    file.write(data)
+
+        if total_size != 0 and progress_bar.n != total_size:
+            raise RuntimeError("Could not download file")
+    except requests.exceptions.ConnectionError as e:
+        print(f"Failed to connect to {url}: {e}")
+        return -1
+    except Exception:
+        print(f"Error downloading snapshot: {url}\n")
+        traceback.print_exc(file=sys.stderr)
+        return -2
 
 
 @task(
@@ -43,7 +84,7 @@ def get_cluster(c, server="http://localhost:6333", format="json"):
     try:
         headers = {"Content-Type": "application/json"}
         url = f"{server}/cluster"
-        response = requests.request("GET", url, headers=headers)
+        response = requests.get(url, headers=headers)
         response = json.loads(response.text)
         out_formatter(response["result"], format)
     except requests.exceptions.ConnectionError as e:
@@ -74,7 +115,7 @@ def delete_cluster_peer(c, peer, server="http://localhost:6333", format="json"):
     try:
         headers = {"Content-Type": "application/json"}
         url = f"/cluster/peer/{peer}"
-        response = requests.request("GET", url, headers=headers)
+        response = requests.get(url, headers=headers)
         response = json.loads(response.text)
         out_formatter(response["result"], format)
     except requests.exceptions.ConnectionError as e:
@@ -107,7 +148,7 @@ def get_collection_cluster(
     try:
         headers = {"Content-Type": "application/json"}
         url = f"{server}/{collection}/cluster"
-        response = requests.request("GET", url, headers=headers)
+        response = requests.get(url, headers=headers)
         response = json.loads(response.text)
         out_formatter(response["result"], format)
     except requests.exceptions.ConnectionError as e:
@@ -470,7 +511,7 @@ def get_snapshots(c, collection=None, server="http://localhost:6333", format="js
             # response = client.list_snapshots(collection)
             headers = {"Content-Type": "application/json"}
             url = f"{server}/collections/{collection}/snapshots"
-            response = requests.request("GET", url, headers=headers)
+            response = requests.get(url, headers=headers)
             response = json.loads(response.text)
             snapshots[collection] = response["result"]
 
@@ -499,16 +540,14 @@ def snapshot_collection(
     c, collection, wait=True, server="http://localhost:6333", format="json"
 ):
     """
-    Create a snapshot of a given collection.  If you are running in a cluster make sure to snapshot each node in your cluster
+    Create a snapshot of a given collection.
+    ProTip: If you are running in a cluster make sure to snapshot each node in your cluster.
     """
-
     server = os.environ.get("QDRANT_SERVER", server)
-
     try:
         client = qdrant_client.QdrantClient(server, timeout=timeout)
         status = client.create_snapshot(collection_name=collection, wait=(wait == True))
         out_formatter(status, format)
-
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
         print(f"Failed to connect to {server}: {e}")
         return -1
@@ -533,20 +572,12 @@ def download_snapshot(c, collection, snapshot, server="http://localhost:6333"):
     """
 
     server = os.environ.get("QDRANT_SERVER", server)
-
-    try:
-        url = f"{server}/collections/{collection}/snapshots/{snapshot}"
-        response = requests.request("GET", url)
-        with open(f"./{snapshot}", "wb") as f:
-            f.write(response.content)
-        return 0
-    except requests.exceptions.ConnectionError as e:
-        print(f"Failed to connect to {server}: {e}")
-        return -1
-    except Exception:
-        print(f"Error downloading snapshot: {url}\n")
-        traceback.print_exc(file=sys.stderr)
-        return -2
+    url = f"{server}/collections/{collection}/snapshots/{snapshot}"
+    up = urlparse(url)
+    _fetch_snapshot(
+        url,
+        f"{SNAPSHOT_DOWNLOAD_PATH}/{up.netloc}{up.path}",
+    )
 
 
 @task(
@@ -619,21 +650,13 @@ def download_full_snapshot(c, snapshot, server="http://localhost:6333"):
     """
     Download a full snapshot.  If running in a cluster you must snapshot each node
     """
-
     server = os.environ.get("QDRANT_SERVER", server)
-
-    try:
-        url = f"{server}/snapshots/{snapshot}"
-        response = requests.request("GET", url)
-        with open(f"./{snapshot}", "wb") as f:
-            f.write(response.content)
-    except requests.exceptions.ConnectionError as e:
-        print(f"Failed to connect to {server}: {e}")
-        return -1
-    except Exception:
-        print(f"Error downloading full snapshot: {url}\n")
-        traceback.print_exc(file=sys.stderr)
-        return -2
+    url = f"{server}/snapshots/{snapshot}"
+    up = urlparse(url)
+    _fetch_snapshot(
+        url,
+        f"{SNAPSHOT_DOWNLOAD_PATH}/{up.netloc}{up.path}",
+    )
 
 
 @task(
