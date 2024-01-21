@@ -1,25 +1,18 @@
-import io
 import json
 import os
-import pprint
-import qdrant_client
-import requests
-import re
 import sys
 import time
 import traceback
 
-from invoke import task
-from invoke.util import debug
-from invoke.tasks import call
-
-from yaml import load, dump
-
 try:
-    from yaml import CLoader as Loader, CDumper as Dumper
+    from yaml import CDumper as Dumper
 except ImportError:
-    from yaml import Loader, Dumper
+    from yaml import Dumper
 
+import qdrant_client
+import requests
+from invoke import task
+from yaml import dump
 
 timeout = None
 
