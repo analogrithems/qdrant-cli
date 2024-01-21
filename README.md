@@ -30,10 +30,10 @@ pip install git+https://git@github.com/analogrithems/qdrant-cli.git
 
 ### port-forward
 
-Yurts uses kubernetes to run our platform.  You will most likely need to port-forward to kubernetes to run these commands
+You will may need to port-forward to kubernetes to run these commands
 
 ```
-$ kubectl port-forward -n qdrant svc/qdrant-yurts 6333 6334
+$ kubectl port-forward -n qdrant svc/qdrant 6333 6334
 ```
 
 Then set your QDRANT_SERVER environment variable to
@@ -115,24 +115,24 @@ $ qdrant get-cluster
     "last_update": "2024-01-21T00:40:12.487643457Z"
   },
   "message_send_failures": {
-    "http://qdrant-yurts-0.qdrant-yurts-headless:6335/": {
+    "http://qdrant-0.qdrant-headless:6335/": {
       "count": 28,
-      "latest_error": "Error in closure supplied to transport channel pool: status: Unavailable, message: \"Failed to connect to http://qdrant-yurts-0.qdrant-yurts-headless:6335/, error: transport error\", details: [], metadata: MetadataMap { headers: {} }"
+      "latest_error": "Error in closure supplied to transport channel pool: status: Unavailable, message: \"Failed to connect to http://qdrant-0.qdrant-headless:6335/, error: transport error\", details: [], metadata: MetadataMap { headers: {} }"
     }
   },
   "peer_id": 7875359758390565,
   "peers": {
     "1237494046554172": {
-      "uri": "http://qdrant-yurts-0.qdrant-yurts-headless:6335/"
+      "uri": "http://qdrant-0.qdrant-headless:6335/"
     },
     "3958396421676712": {
-      "uri": "http://qdrant-yurts-2.qdrant-yurts-headless:6335/"
+      "uri": "http://qdrant-2.qdrant-headless:6335/"
     },
     "6172692231348117": {
-      "uri": "http://qdrant-yurts-1.qdrant-yurts-headless:6335/"
+      "uri": "http://qdrant-1.qdrant-headless:6335/"
     },
     "7875359758390565": {
-      "uri": "http://qdrant-yurts-3.qdrant-yurts-headless:6335/"
+      "uri": "http://qdrant-3.qdrant-headless:6335/"
     }
   },
   "raft_info": {
@@ -155,21 +155,21 @@ consensus_thread_status:
   consensus_thread_status: working
   last_update: '2024-01-21T00:43:26.380192898Z'
 message_send_failures:
-  http://qdrant-yurts-0.qdrant-yurts-headless:6335/:
+  http://qdrant-0.qdrant-headless:6335/:
     count: 28
     latest_error: 'Error in closure supplied to transport channel pool: status: Unavailable,
-      message: "Failed to connect to http://qdrant-yurts-0.qdrant-yurts-headless:6335/,
+      message: "Failed to connect to http://qdrant-0.qdrant-headless:6335/,
       error: transport error", details: [], metadata: MetadataMap { headers: {} }'
 peer_id: 7875359758390565
 peers:
   '1237494046554172':
-    uri: http://qdrant-yurts-0.qdrant-yurts-headless:6335/
+    uri: http://qdrant-0.qdrant-headless:6335/
   '3958396421676712':
-    uri: http://qdrant-yurts-2.qdrant-yurts-headless:6335/
+    uri: http://qdrant-2.qdrant-headless:6335/
   '6172692231348117':
-    uri: http://qdrant-yurts-1.qdrant-yurts-headless:6335/
+    uri: http://qdrant-1.qdrant-headless:6335/
   '7875359758390565':
-    uri: http://qdrant-yurts-3.qdrant-yurts-headless:6335/
+    uri: http://qdrant-3.qdrant-headless:6335/
 raft_info:
   commit: 24605
   is_voter: true
