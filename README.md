@@ -1,6 +1,8 @@
 # qdrantCLI
 
 This is a cli client for qdrant.  It's designed to be a simple script that allows formatting output in json of yaml.
+It's a work in progress so I wouldn't use this on a production system if you do not know what you are doing. Data loss will 
+probably happen if you do not know what you are doing.
 
 ## Requirements
 
