@@ -1,8 +1,10 @@
-# qdrantCLI
+# qdrant-client + pyInvoke = qdrantCLI
 
 This is a cli client for qdrant.  It's designed to be a simple script that allows formatting output in json or yaml.
 It's a work in progress so I wouldn't use this on a production system if you do not know what you are doing. Data loss will
 probably happen if you do not know what you are doing.
+
+It makes use of pyinvoke to just map the qdrant-client functions to subcommands of pyInvoke.
 
 ## Requirements
 
