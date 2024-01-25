@@ -1,6 +1,7 @@
 import json
 import os
 import gzip
+import logging
 import sys
 import time
 import traceback
@@ -21,15 +22,25 @@ from invoke import task
 
 timeout = None
 SNAPSHOT_DOWNLOAD_PATH = f"./QdrantSnapshots"
+logger = logging.getLogger("qdrantCLI")
+logger.setLevel(logging.INFO)
+handler = logging.StreamHandler(sys.stderr)
+formatter = logging.Formatter(
+    "%(created)f:%(levelname)s:%(name)s:%(module)s:%(message)s"
+)
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 ## Helper functions first
 
 
-def p_log(msg, severity="info"):
+def p_log(msg, severity="debug"):
     """
     This function will output to the console useful information.
     """
     run_time = time.process_time()
-    print("%s: %s. (%s)" % (severity.upper(), msg, run_time), file=sys.stderr)
+    logger.log(
+        getattr(logging, severity.upper()), f"{severity.upper()}: {msg} | {run_time}"
+    )
 
 
 def _scroll(
@@ -39,7 +50,13 @@ def _scroll(
     limit=None,
     server="http://localhost:6333",
 ):
+    """
+    _scroll: since we use this in multiple functions this is our internal helper
+    """
     server = os.environ.get("QDRANT_SERVER", server)
+    headers = {"Content-Type": "application/json"}
+    url = f"{server}/collections/{collection}/points/scroll"
+
     try:
         # client = qdrant_client.QdrantClient(server, timeout=timeout)
         has_more = True
@@ -59,11 +76,6 @@ def _scroll(
         points = []
         while has_more:
             has_more = False
-            # p_log(f"Scroll args: {scroll_args}", "DEBUG")
-            # result, next = client.scroll(**scroll_args)
-            headers = {"Content-Type": "application/json"}
-            url = f"{server}/collections/{collection}/points/scroll"
-
             response = requests.post(url, json=scroll_args, headers=headers)
             response = json.loads(response.text)
 
@@ -77,15 +89,14 @@ def _scroll(
             if next:
                 has_more = True
                 scroll_args["offset"] = next
-            else:
-                print("End of scroll")
 
+        p_log(f"Found {len(points)} points in {collection}")
         return points
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
-        print(f"Failed to connect to {server}: {e}")
+        logger.error(f"Failed to connect to {server}: {e}")
         return -1
     except Exception:
-        print(f"Error scrolling points on {url}")
+        logger.error(f"Error scrolling points on {url}")
         traceback.print_exc(file=sys.stderr)
         return -2
 
@@ -107,7 +118,7 @@ def _fetch_snapshot(url, download_path):
         ) as progress_bar:
             p_log(f"Downloading '{url}' to '{download_path}'")
             if not os.path.exists(os.path.dirname(download_path)):
-                print(f"Making directory: {os.path.dirname(download_path)}")
+                logger.debug(f"Making directory: {os.path.dirname(download_path)}")
                 os.makedirs(os.path.dirname(download_path), mode=0o777, exist_ok=True)
             with open(download_path, "wb") as file:
                 for data in response.iter_content(block_size):
@@ -117,10 +128,10 @@ def _fetch_snapshot(url, download_path):
         if total_size != 0 and progress_bar.n != total_size:
             raise RuntimeError("Could not download file")
     except requests.exceptions.ConnectionError as e:
-        print(f"Failed to connect to {url}: {e}")
+        logger.error(f"Failed to connect to {url}: {e}")
         return -1
     except Exception:
-        print(f"Error downloading snapshot: {url}\n")
+        logger.error(f"Error downloading snapshot: {url}\n")
         traceback.print_exc(file=sys.stderr)
         return -2
 
@@ -147,10 +158,10 @@ def get_cluster(c, server="http://localhost:6333", format="json"):
         response = json.loads(response.text)
         out_formatter(response["result"], format)
     except requests.exceptions.ConnectionError as e:
-        print(f"Failed to connect to {server}: {e}")
+        logger.error(f"Failed to connect to {server}: {e}")
         return -1
     except Exception:
-        print(f"Error fetching cluster information for: {server}\n")
+        logger.error(f"Error fetching cluster information for: {server}\n")
         traceback.print_exc(file=sys.stderr)
         return -2
 
@@ -178,10 +189,10 @@ def delete_cluster_peer(c, peer, server="http://localhost:6333", format="json"):
         response = json.loads(response.text)
         out_formatter(response["result"], format)
     except requests.exceptions.ConnectionError as e:
-        print(f"Failed to connect to {server}: {e}")
+        logger.error(f"Failed to connect to {server}: {e}")
         return -1
     except Exception:
-        print(f"Error fetching cluster information for: {server}\n")
+        logger.error(f"Error fetching cluster information for: {server}\n")
         traceback.print_exc(file=sys.stderr)
         return -2
 
@@ -211,10 +222,10 @@ def get_collection_cluster(
         response = json.loads(response.text)
         out_formatter(response["result"], format)
     except requests.exceptions.ConnectionError as e:
-        print(f"Failed to connect to {server}: {e}")
+        logger.error(f"Failed to connect to {server}: {e}")
         return -1
     except Exception:
-        print(
+        logger.error(
             f"Error fetching cluster collection information for: {server}/{collection}\n"
         )
         traceback.print_exc(file=sys.stderr)
@@ -239,10 +250,10 @@ def get_collections(c, server="http://localhost:6333", format="json"):
         response = client.get_collections()
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
-        print(f"Failed to connect to {server}: {e}")
+        logger.error(f"Failed to connect to {server}: {e}")
         return -1
     except Exception:
-        print(f"Error fetching collections: GET {server}/collections\n")
+        logger.error(f"Error fetching collections: GET {server}/collections\n")
         traceback.print_exc(file=sys.stderr)
         return -2
 
@@ -268,10 +279,12 @@ def get_collection(c, collection, server="http://localhost:6333", format="json")
         response = client.get_collection(collection_name=collection)
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
-        print(f"Failed to connect to {server}: {e}")
+        logger.error(f"Failed to connect to {server}: {e}")
         return -1
     except Exception:
-        print(f"Error fetching collection: GET {server}/collections/{collection}\n")
+        logger.error(
+            f"Error fetching collection: GET {server}/collections/{collection}\n"
+        )
         traceback.print_exc(file=sys.stderr)
         return -2
 
@@ -297,10 +310,12 @@ def delete_collection(c, collection, server="http://localhost:6333", format="jso
         response = client.delete_collection(collection_name=collection)
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
-        print(f"Failed to connect to {server}: {e}")
+        logger.error(f"Failed to connect to {server}: {e}")
         return -1
     except Exception:
-        print(f"Error deleteing collection: DELETE {server}/collections/{collection}\n")
+        logger.error(
+            f"Error deleteing collection: DELETE {server}/collections/{collection}\n"
+        )
         traceback.print_exc(file=sys.stderr)
         return -2
 
@@ -352,10 +367,12 @@ def _create_collection(
         response = client.create_collection(**collection_args)
         return response
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
-        print(f"Failed to connect to {server}: {e}")
+        logger.error(f"Failed to connect to {server}: {e}")
         return -1
     except Exception:
-        print(f"Error create collection: PUT {server}/collections/{collection}\n")
+        logger.error(
+            f"Error create collection: PUT {server}/collections/{collection}\n"
+        )
         traceback.print_exc(file=sys.stderr)
         return -2
 
@@ -453,6 +470,7 @@ def _get_vector_config(collection, server):
         "collection": "The collection to rebalance",
         "shards": "How man shards should we have this time?",
         "replicas": "How many copies should we keep you need at least 2 for redunancy",
+        "overwrite": "Reuse the collections name Default to false and make {collection}-new",
         "server": "Server address of qdrant default: 'http://localhost:6333'",
         "format": "output format of the response [JSON|YAML]",
     }
@@ -462,6 +480,7 @@ def rebalance(
     collection,
     shards,
     replicas,
+    overwrite=False,
     server="http://localhost:6333",
     format="json",
 ):
@@ -469,45 +488,116 @@ def rebalance(
     Rebalance is used to change a collections sharding and replica configuration
     """
     server = os.environ.get("QDRANT_SERVER", server)
-    client = qdrant_client.QdrantClient(server, timeout=timeout)
-    points = _scroll(collection=collection, server=server)
-    vector_config = _get_vector_config(collection, server)
+    try:
+        client = qdrant_client.QdrantClient(server, timeout=timeout)
+        points = _scroll(collection=collection, server=server)
+        vector_config = _get_vector_config(collection, server)
 
-    upsert = []
-    for point in points:
-        record = {
-            "upsert": {
-                "batch": {
-                    "ids": [point["id"]],
-                    "payloads": [point["payload"]],
-                    "vectors": [point["vector"]],
-                }
+        # Make new collection to test the zerox
+        if overwrite == False:
+            collection = f"{collection}-new"
+
+        collection_args = {
+            "collection_name": collection,
+            "vectors_config": {
+                "size": vector_config.size,
+                "distance": str(vector_config.distance),
             },
+            "shard_number": shards,
+            "replication_factor": replicas,
         }
-        upsert.append(record)
-    print(f"Upsert collection: {upsert}")
 
-    # Make new collection to test the zerox
-    collection = f"{collection}-new"
-    collection_args = {
-        "collection_name": collection,
-        "vectors_config": {
-            "size": vector_config.size,
-            "distance": str(vector_config.distance),
-        },
-        "shard_number": shards,
-        "replication_factor": replicas,
+        p_log(f"Trying to creating collection: {collection_args}")
+        # @TODO get some error checking in here
+        response = client.recreate_collection(**collection_args)
+
+        # @TODO get some error checking in here
+        response = client.upsert(collection_name=collection, wait=True, points=points)
+        p_log(f"Done batching up points")
+        out_formatter(response, format)
+    except qdrant_client.http.exceptions.ResponseHandlingException as e:
+        logger.error(f"Failed to connect to {server}: {e}")
+        return -1
+    except Exception:
+        logger.error(f"Error rebalancing collection: {collection}\n")
+        traceback.print_exc(file=sys.stderr)
+        return -2
+
+
+@task(
+    help={
+        "shards": "How man shards should we have this time?",
+        "replicas": "How many copies should we keep you need at least 2 for redunancy",
+        "overwrite": "Reuse the collections name Default to false and make {collection}-new",
+        "server": "Server address of qdrant default: 'http://localhost:6333'",
+        "format": "output format of the response [JSON|YAML]",
     }
+)
+def rebalance_cluster(
+    c,
+    shards,
+    replicas,
+    overwrite=True,
+    server="http://localhost:6333",
+    format="json",
+):
+    """
+    Rebalance all collections in the cluster.
+    Warning: This is crazy dangerous, do not cancel or interrupt
+    """
+    server = os.environ.get("QDRANT_SERVER", server)
+    try:
+        client = qdrant_client.QdrantClient(server, timeout=timeout)
+        collections = client.get_collections()
+        for collection in client.get_collections().collections:
+            collection = collection.name
+            p_log(f"Rebalancing collection: {collection}", "INFO")
 
-    p_log(f"Trying to creating collection: {collection_args}")
+            try:
+                p_log(f"Fetching points for: {collection}")
+                points = _scroll(collection=collection, server=server)
 
-    response = client.recreate_collection(**collection_args)
+                p_log(f"Fetching vector_config for: {collection}")
+                vector_config = _get_vector_config(collection, server)
 
-    p_log(f"Trying to batch upload collection: {collection_args}")
-    response = client.batch_update_points(
-        collection_name=collection, wait=True, update_operations=upsert
-    )
-    p_log(f"Done batching up points")
+                # Make new collection to test the zerox
+                if overwrite == False:
+                    collection = f"{collection}-new"
+                else:
+                    logger.warn(f"Overriting collection: {collection}")
+
+                collection_args = {
+                    "collection_name": collection,
+                    "vectors_config": {
+                        "size": vector_config.size,
+                        "distance": str(vector_config.distance),
+                    },
+                    "shard_number": shards,
+                    "replication_factor": replicas,
+                }
+
+                p_log(f"Trying to recreate collection: {collection_args}")
+                # @TODO get some error checking in here
+                response = client.recreate_collection(**collection_args)
+
+                # @TODO get some error checking in here
+                if points:
+                    response = client.upsert(
+                        collection_name=collection, wait=True, points=points
+                    )
+                p_log(f"Done Rebalancing collection: {collection}")
+
+            except Exception:
+                logger.error(f"Error rebalancing cluster collection: {collection}\n")
+                traceback.print_exc(file=sys.stderr)
+                return -2
+    except qdrant_client.http.exceptions.ResponseHandlingException as e:
+        logger.error(f"Failed to connect to {server}: {e}")
+        return -1
+    except Exception:
+        logger.error(f"Error rebalancing cluster collection on server: {server}\n")
+        traceback.print_exc(file=sys.stderr)
+        return -2
 
 
 @task(
@@ -586,10 +676,10 @@ def create_payload_index(
         )
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
-        print(f"Failed to connect to {server}: {e}")
+        logger.error(f"Failed to connect to {server}: {e}")
         return -1
     except Exception:
-        print(f"Error creating payload index\n")
+        logger.error(f"Error creating payload index\n")
         traceback.print_exc(file=sys.stderr)
         return -2
 
@@ -628,10 +718,10 @@ def delete_payload_index(
         )
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
-        print(f"Failed to connect to {server}: {e}")
+        logger.error(f"Failed to connect to {server}: {e}")
         return -1
     except Exception:
-        print(f"Error deleteing payload index\n")
+        logger.error(f"Error deleteing payload index\n")
         traceback.print_exc(file=sys.stderr)
         return -2
 
@@ -655,10 +745,10 @@ def get_aliases(c, server="http://localhost:6333", format="json"):
         response = client.get_aliases()
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
-        print(f"Failed to connect to {server}: {e}")
+        logger.error(f"Failed to connect to {server}: {e}")
         return -1
     except Exception:
-        print(f"Error getting aliases\n")
+        logger.error(f"Error getting aliases\n")
         traceback.print_exc(file=sys.stderr)
         return -2
 
@@ -683,10 +773,10 @@ def get_locks(c, server="http://localhost:6333", format="json"):
         response = client.get_locks()
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
-        print(f"Failed to connect to {server}: {e}")
+        logger.error(f"Failed to connect to {server}: {e}")
         return -1
     except Exception:
-        print(f"Error fetching loks on {server}\n")
+        logger.error(f"Error fetching loks on {server}\n")
         traceback.print_exc(file=sys.stderr)
         return -2
 
@@ -729,10 +819,10 @@ def get_snapshots(c, collection=None, server="http://localhost:6333", format="js
         out_formatter(snapshots, format)
 
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
-        print(f"Failed to connect to {server}: {e}")
+        logger.error(f"Failed to connect to {server}: {e}")
         return -1
     except Exception:
-        print(f"Error fetching snapshots on {server}\n")
+        logger.error(f"Error fetching snapshots on {server}\n")
         traceback.print_exc(file=sys.stderr)
         return -2
 
@@ -760,10 +850,10 @@ def snapshot_collection(
         status = client.create_snapshot(collection_name=collection, wait=(wait == True))
         out_formatter(status, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
-        print(f"Failed to connect to {server}: {e}")
+        logger.error(f"Failed to connect to {server}: {e}")
         return -1
     except Exception:
-        print(f"Error snapshoting collection {server}\n")
+        logger.error(f"Error snapshoting collection {server}\n")
         traceback.print_exc(file=sys.stderr)
         return -2
 
@@ -815,10 +905,10 @@ def delete_snapshot(
         response = json.loads(response.text)
         out_formatter(response["result"], format)
     except requests.exceptions.ConnectionError as e:
-        print(f"Failed to connect to {server}: {e}")
+        logger.error(f"Failed to connect to {server}: {e}")
         return -1
     except Exception as e:
-        print(f"Error deleteing snapshots: {e}\n")
+        logger.error(f"Error deleteing snapshots: {e}\n")
         traceback.print_exc(file=sys.stderr)
         return -2
 
@@ -841,10 +931,10 @@ def list_full_snapshots(c, server="http://localhost:6333", format="json"):
         response = client.list_full_snapshots()
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
-        print(f"Failed to connect to {server}: {e}")
+        logger.error(f"Failed to connect to {server}: {e}")
         return -1
     except Exception as e:
-        print(f"Error listing full snapshots: {e}\n")
+        logger.error(f"Error listing full snapshots: {e}\n")
         traceback.print_exc(file=sys.stderr)
         return -2
 
@@ -889,10 +979,10 @@ def create_full_snapshot(c, wait=True, server="http://localhost:6333", format="j
         response = client.create_full_snapshot(wait=(wait == True))
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
-        print(f"Failed to connect to {server}: {e}")
+        logger.error(f"Failed to connect to {server}: {e}")
         return -1
     except Exception as e:
-        print(f"Error creating full snapshots: {e}\n")
+        logger.error(f"Error creating full snapshots: {e}\n")
         traceback.print_exc(file=sys.stderr)
         return -2
 
@@ -921,10 +1011,10 @@ def delete_full_snapshot(
         )
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
-        print(f"Failed to connect to {server}: {e}")
+        logger.error(f"Failed to connect to {server}: {e}")
         return -1
     except Exception:
-        print(f"Error deleteing full snapshot: {server}/snapshots/{snapshot}\n")
+        logger.error(f"Error deleteing full snapshot: {server}/snapshots/{snapshot}\n")
         traceback.print_exc(file=sys.stderr)
         return -2
 
@@ -964,10 +1054,12 @@ def recover_from_snapshot(
         )
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
-        print(f"Failed to connect to {server}: {e}")
+        logger.error(f"Failed to connect to {server}: {e}")
         return -1
     except Exception:
-        print(f"Error recovering collection: {collection} from snapshot: {location}\n")
+        logger.error(
+            f"Error recovering collection: {collection} from snapshot: {location}\n"
+        )
         traceback.print_exc(file=sys.stderr)
         return -2
 
@@ -997,10 +1089,10 @@ def list_shard_snapshots(
         )
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
-        print(f"Failed to connect to {server}: {e}")
+        logger.error(f"Failed to connect to {server}: {e}")
         return -1
     except Exception:
-        print(f"Error listing shards for collection: {collection}\n")
+        logger.error(f"Error listing shards for collection: {collection}\n")
         traceback.print_exc(file=sys.stderr)
         return -2
 
@@ -1030,10 +1122,10 @@ def create_shard_snapshot(
         )
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
-        print(f"Failed to connect to {server}: {e}")
+        logger.error(f"Failed to connect to {server}: {e}")
         return -1
     except Exception:
-        print(f"Error creating shard snapshot: {collection}\n")
+        logger.error(f"Error creating shard snapshot: {collection}\n")
         traceback.print_exc(file=sys.stderr)
         return -2
 
@@ -1073,10 +1165,12 @@ def delete_shard_snapshot(
         )
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
-        print(f"Failed to connect to {server}: {e}")
+        logger.error(f"Failed to connect to {server}: {e}")
         return -1
     except Exception:
-        print(f"Error deleteing shard snapshot: {collection}/{shard}/{snapshot}\n")
+        logger.error(
+            f"Error deleteing shard snapshot: {collection}/{shard}/{snapshot}\n"
+        )
         traceback.print_exc(file=sys.stderr)
         return -2
 
@@ -1119,10 +1213,10 @@ def recover_shard_snapshot(
         )
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
-        print(f"Failed to connect to {server}: {e}")
+        logger.error(f"Failed to connect to {server}: {e}")
         return -1
     except Exception:
-        print(
+        logger.error(
             f"Error recovering shard: {shard} for collection: {collection} from: {location}:{priority}\n"
         )
         traceback.print_exc(file=sys.stderr)
@@ -1131,7 +1225,7 @@ def recover_shard_snapshot(
 
 def out_formatter(output=None, format="json"):
     if format.lower() == "json":
-        print(
+        logger.error(
             json.dumps(
                 output,
                 default=lambda o: o.__dict__,
@@ -1141,8 +1235,8 @@ def out_formatter(output=None, format="json"):
         )
 
     elif format.lower() == "yaml":
-        print(dump(output, Dumper=Dumper))
+        logger.error(dump(output, Dumper=Dumper))
     else:
-        print("No output format selected")
+        logger.error("No output format selected")
 
     return output
