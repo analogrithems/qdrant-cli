@@ -4,6 +4,7 @@ import gzip
 import sys
 import time
 import traceback
+from typing import Optional
 
 try:
     from yaml import CDumper as Dumper
@@ -29,6 +30,64 @@ def p_log(msg, severity="info"):
     """
     run_time = time.process_time()
     print("%s: %s. (%s)" % (severity.upper(), msg, run_time), file=sys.stderr)
+
+
+def _scroll(
+    collection,
+    filter=None,
+    offset=None,
+    limit=None,
+    server="http://localhost:6333",
+):
+    server = os.environ.get("QDRANT_SERVER", server)
+    try:
+        # client = qdrant_client.QdrantClient(server, timeout=timeout)
+        has_more = True
+        scroll_args = {
+            "collection_name": collection,
+            "with_payload": True,
+            "with_vector": True,
+        }
+
+        if filter != None:
+            scroll_args["filter"] = filter
+        if offset != None:
+            scroll_args["offset"] = offset
+        if limit != None:
+            scroll_args["limit"] = int(limit)
+
+        points = []
+        while has_more:
+            has_more = False
+            # p_log(f"Scroll args: {scroll_args}", "DEBUG")
+            # result, next = client.scroll(**scroll_args)
+            headers = {"Content-Type": "application/json"}
+            url = f"{server}/collections/{collection}/points/scroll"
+
+            response = requests.post(url, json=scroll_args, headers=headers)
+            response = json.loads(response.text)
+
+            if response["result"]["next_page_offset"] != None and limit == None:
+                next = response["result"]["next_page_offset"]
+            else:
+                next = None
+
+            points += response["result"]["points"]
+
+            if next:
+                has_more = True
+                scroll_args["offset"] = next
+            else:
+                print("End of scroll")
+
+        return points
+    except qdrant_client.http.exceptions.ResponseHandlingException as e:
+        print(f"Failed to connect to {server}: {e}")
+        return -1
+    except Exception:
+        print(f"Error scrolling points on {url}")
+        traceback.print_exc(file=sys.stderr)
+        return -2
 
 
 def _fetch_snapshot(url, download_path):
@@ -246,6 +305,61 @@ def delete_collection(c, collection, server="http://localhost:6333", format="jso
         return -2
 
 
+def _create_collection(
+    collection,
+    vectors,
+    shards=2,
+    replication=1,
+    write_consistency=2,
+    on_disk=False,
+    hnsw=None,
+    optimizers=None,
+    wal=None,
+    quantization=None,
+    init_from=None,
+    timeout=None,
+    sparse_vectors=None,
+    sharding_method=None,
+    server="http://localhost:6333",
+):
+    server = os.environ.get("QDRANT_SERVER", server)
+    try:
+        client = qdrant_client.QdrantClient(server, timeout=timeout)
+        collection_args = {
+            "collection_name": collection,
+            "vectors_config": vectors,
+            "shard_number": shards,
+            "replication_factor": replication,
+            "write_consistency_factor": write_consistency,
+            "on_disk_payload": on_disk,
+        }
+
+        if hnsw:
+            collection_args["hnsw_config"] = hnsw
+        if optimizers:
+            collection_args["optimizers_config"] = optimizers
+        if wal:
+            collection_args["wal_config"] = wal
+        if quantization:
+            collection_args["quantization_config"] = quantization
+        if timeout:
+            collection_args["timeout"] = timeout
+        if sparse_vectors:
+            collection_args["sparse_vectors_config"] = sparse_vectors
+        if sharding_method:
+            collection_args["sharding_method"] = sharding_method
+
+        response = client.create_collection(**collection_args)
+        return response
+    except qdrant_client.http.exceptions.ResponseHandlingException as e:
+        print(f"Failed to connect to {server}: {e}")
+        return -1
+    except Exception:
+        print(f"Error create collection: PUT {server}/collections/{collection}\n")
+        traceback.print_exc(file=sys.stderr)
+        return -2
+
+
 @task(
     autoprint=False,
     help={
@@ -305,33 +419,130 @@ def create_collection(
     """
     Create a collection with all the fixins
     """
+    response = _create_collection(
+        collection=collection,
+        vectors=vectors,
+        shards=shards,
+        replication=replication,
+        write_consistency=write_consistency,
+        on_disk=on_disk,
+        hnsw=hnsw,
+        optimizers=optimizers,
+        wal=wal,
+        quantization=quantization,
+        init_from=init_from,
+        timeout=timeout,
+        sparse_vectors=sparse_vectors,
+        sharding_method=sharding_method,
+        server=server,
+    )
+
+
+def _get_vector_config(collection, server):
+    """
+    Helper function to get a current collections vector config
+    """
     server = os.environ.get("QDRANT_SERVER", server)
-    try:
-        client = qdrant_client.QdrantClient(server, timeout=timeout)
-        response = client.create_collection(
-            collection_name=collection,
-            vectors_config=vectors,
-            shard_number=shards,
-            replication_factor=replication,
-            write_consistency_factor=write_consistency,
-            on_disk_payload=on_disk,
-            hnsw_config=hnsw,
-            optimizers_config=optimizers,
-            wal_config=wal,
-            quantization_configqu=quantization,
-            init_from=init_from,
-            timeout=timeout,
-            sparse_vectors_config=sparse_vectors,
-            sharding_method=sharding_method,
-        )
-        out_formatter(response, format)
-    except qdrant_client.http.exceptions.ResponseHandlingException as e:
-        print(f"Failed to connect to {server}: {e}")
-        return -1
-    except Exception:
-        print(f"Error create collection: PUT {server}/collections/{collection}\n")
-        traceback.print_exc(file=sys.stderr)
-        return -2
+    client = qdrant_client.QdrantClient(server, timeout=timeout)
+    collection = client.get_collection(collection_name=collection)
+    return collection.config.params.vectors
+
+
+@task(
+    help={
+        "collection": "The collection to rebalance",
+        "shards": "How man shards should we have this time?",
+        "replicas": "How many copies should we keep you need at least 2 for redunancy",
+        "server": "Server address of qdrant default: 'http://localhost:6333'",
+        "format": "output format of the response [JSON|YAML]",
+    }
+)
+def rebalance(
+    c,
+    collection,
+    shards,
+    replicas,
+    server="http://localhost:6333",
+    format="json",
+):
+    """
+    Rebalance is used to change a collections sharding and replica configuration
+    """
+    server = os.environ.get("QDRANT_SERVER", server)
+    client = qdrant_client.QdrantClient(server, timeout=timeout)
+    points = _scroll(collection=collection, server=server)
+    vector_config = _get_vector_config(collection, server)
+
+    upsert = []
+    for point in points:
+        record = {
+            "upsert": {
+                "batch": {
+                    "ids": [point["id"]],
+                    "payloads": [point["payload"]],
+                    "vectors": [point["vector"]],
+                }
+            },
+        }
+        upsert.append(record)
+    print(f"Upsert collection: {upsert}")
+
+    # Make new collection to test the zerox
+    collection = f"{collection}-new"
+    collection_args = {
+        "collection_name": collection,
+        "vectors_config": {
+            "size": vector_config.size,
+            "distance": str(vector_config.distance),
+        },
+        "shard_number": shards,
+        "replication_factor": replicas,
+    }
+
+    p_log(f"Trying to creating collection: {collection_args}")
+
+    response = client.recreate_collection(**collection_args)
+
+    p_log(f"Trying to batch upload collection: {collection_args}")
+    response = client.batch_update_points(
+        collection_name=collection, wait=True, update_operations=upsert
+    )
+    p_log(f"Done batching up points")
+
+
+@task(
+    help={
+        "collection": "Name of the collection to retrieve from",
+        "filter": "Look only for points which satisfies this conditions. If not provided - all points",
+        "offset": "Start ID to read points from",
+        "limit": "How many results per page",
+        "server": "Server address of qdrant default: 'http://localhost:6333'",
+        "format": "output format of the response [JSON|YAML]",
+    },
+    optional=[
+        "filter",
+        "offset",
+        "limit",
+        "server",
+        "format",
+    ],
+)
+def scroll(
+    c,
+    collection,
+    filter=None,
+    offset=None,
+    limit=None,
+    server="http://localhost:6333",
+    format="json",
+):
+    """
+    Scroll request - paginate over all points which matches given filtering condition
+    """
+    points = _scroll(
+        collection=collection, filter=filter, offset=offset, limit=limit, server=server
+    )
+    out_formatter(points, format)
 
 
 @task(
