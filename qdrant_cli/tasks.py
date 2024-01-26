@@ -575,10 +575,10 @@ def rebalance_cluster(
                 }
 
                 p_log(f"Trying to recreate collection: {collection_args}")
-                # @TODO get some error checking in here
+                # @TODO get some better error checking in here
                 response = client.recreate_collection(**collection_args)
 
-                # @TODO get some error checking in here
+                # @TODO get some better error checking in here
                 if points:
                     response = client.upsert(
                         collection_name=collection, wait=True, points=points
