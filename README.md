@@ -70,9 +70,12 @@ Subcommands:
   get-snapshots            Get a list of snapshots for a given collection or list all snapshots for all collections if no --collection-id is given
   list-full-snapshots      This will list full snapshots of the server
   list-shard-snapshots     This will list the shards of a given collection
+  rebalance                Rebalance is used to change a collections sharding and replica configuration
+  rebalance-cluster        Rebalance all collections in the cluster.
   recover-from-snapshot    This will try to recover a collection from the snapshot at the specified location
   recover-shard-snapshot   This will create a new shard of a given collection
-  snapshot-collection      Create a snapshot of a given collection.  If you are running in a cluster make sure to snapshot each node in your cluster
+  scroll                   Scroll request - paginate over all points which matches given filtering condition
+  snapshot-collection      Create a snapshot of a given collection.
 ```
 
 You can get deeper details about specific commands with the format `qdrant <subcommand> --help`

@@ -25,9 +25,7 @@ SNAPSHOT_DOWNLOAD_PATH = f"./QdrantSnapshots"
 logger = logging.getLogger("qdrantCLI")
 logger.setLevel(logging.INFO)
 handler = logging.StreamHandler(sys.stderr)
-formatter = logging.Formatter(
-    "%(created)f:%(levelname)s:%(name)s:%(module)s:%(message)s"
-)
+formatter = logging.Formatter("%(levelname)s: %(message)s")
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 ## Helper functions first
@@ -90,7 +88,7 @@ def _scroll(
                 has_more = True
                 scroll_args["offset"] = next
 
-        p_log(f"Found {len(points)} points in {collection}")
+        p_log(f"Found {len(points)} points in {collection}", "info")
         return points
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
         logger.error(f"Failed to connect to {server}: {e}")
@@ -585,7 +583,10 @@ def rebalance_cluster(
                     response = client.upsert(
                         collection_name=collection, wait=True, points=points
                     )
-                p_log(f"Done Rebalancing collection: {collection}")
+                else:
+                    p_log(f"No points to upsert, skipping", "info")
+
+                p_log(f"Done Rebalancing collection: {collection}", "info")
 
             except Exception:
                 logger.error(f"Error rebalancing cluster collection: {collection}\n")
