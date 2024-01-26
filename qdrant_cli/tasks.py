@@ -524,7 +524,7 @@ def rebalance(
 
 @task(
     help={
-        "shards": "How man shards should we have this time?",
+        "shards": "How many shards should we have this time?",
         "replicas": "How many copies should we keep you need at least 2 for redunancy",
         "overwrite": "Reuse the collections name Default to false and make {collection}-new",
         "server": "Server address of qdrant default: 'http://localhost:6333'",
