@@ -41,6 +41,11 @@ def p_log(msg, severity="debug"):
     )
 
 
+def chunks(xs, n):
+    n = max(1, n)
+    return (xs[i : i + n] for i in range(0, len(xs), n))
+
+
 def _scroll(
     collection,
     filter=None,
@@ -579,13 +584,23 @@ def rebalance_cluster(
                 p_log(f"Recreate Collection response: {response}", "info")
 
                 if points:
-                    p_log(
-                        f"Inserting {len(points)} points in to collection: {collection}",
-                        "info",
-                    )
-                    response = client.upsert(
-                        collection_name=collection, wait=True, points=points
-                    )
+                    if len([points]) > 1000:
+                        for batch in chunks(points, 1000):
+                            p_log(
+                                f"Inserting {len(batch)} points in to collection: {collection}",
+                                "info",
+                            )
+                            response = client.upsert(
+                                collection_name=collection, wait=True, points=batch
+                            )
+                    else:
+                        p_log(
+                            f"Inserting {len(points)} points in to collection: {collection}",
+                            "info",
+                        )
+                        response = client.upsert(
+                            collection_name=collection, wait=True, points=points
+                        )
                     p_log(f"Upsert response: {response}", "info")
                 else:
                     p_log(f"No points to upsert, skipping", "info")
