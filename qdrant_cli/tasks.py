@@ -584,10 +584,10 @@ def rebalance_cluster(
                 p_log(f"Recreate Collection response: {response}", "info")
 
                 if points:
-                    if len([points]) > 1000:
+                    if len(points) > 1000:
                         for batch in chunks(points, 1000):
                             p_log(
-                                f"Inserting {len(batch)} points in to collection: {collection}",
+                                f"Inserting another {len(batch)} points in to collection: {collection}",
                                 "info",
                             )
                             response = client.upsert(
