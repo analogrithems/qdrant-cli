@@ -20,7 +20,7 @@ import qdrant_client
 import requests
 from invoke import task
 
-timeout = None
+timeout = 10000
 SNAPSHOT_DOWNLOAD_PATH = f"./QdrantSnapshots"
 logger = logging.getLogger("qdrantCLI")
 logger.setLevel(logging.INFO)
