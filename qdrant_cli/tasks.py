@@ -1255,13 +1255,13 @@ def migrate_node(c, src, dest):
     if using in a cluster run this for each node.
 
     """
-    client = QdrantClient(src)
+    client = qdrant_client.QdrantClient(src)
 
     collections = client.get_collections()
     for collection in collections.collections:
         print(f"Starting to migrate collection: {collection.name}")
         try:
-            dest_client = QdrantClient(dest, timeout=1000)
+            dest_client = qdrant_client.QdrantClient(dest, timeout=1000)
 
             print(f"\tCreating snapshot for {src}/collections/{collection.name}")
             snapshot_info = client.create_snapshot(
