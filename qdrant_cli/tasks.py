@@ -1296,7 +1296,7 @@ def migrate_node(c, src, dest):
     },
     optional=["format", "server"],
 )
-def delete_all_collections(c, server, format):
+def delete_all_collections(c, server="http://localhost:6333", format="json"):
     """
     delete-all-collections - this delete nuke every collection in your qdrant server.
 
