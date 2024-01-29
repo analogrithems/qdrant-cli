@@ -1288,6 +1288,34 @@ def migrate_node(c, src, dest):
             continue
 
 
+@task(
+    autoprint=False,
+    help={
+        "server": "Server address of qdrant default: 'http://localhost:6333'",
+        "format": "output format of the response [JSON|YAML]",
+    },
+    optional=["format", "server"],
+)
+def delete_all_collections(c, server, format):
+    """
+    delete-all-collections - this delete nuke every collection in your qdrant server.
+
+    """
+    server = os.environ.get("QDRANT_SERVER", server)
+    client = qdrant_client.QdrantClient(server)
+
+    collections = client.get_collections()
+    for collection in collections.collections:
+        print(f"Starting to delete collection: {collection.name}")
+        try:
+            config = client.delete_collection(collection.name)
+
+        except Exception:
+            print(f"Error deleteing {collection.name}\n\n\n")
+            traceback.print_exc(file=sys.stdout)
+            return -3
+
+
 def out_formatter(output=None, format="json"):
     if format.lower() == "json":
         logger.error(
