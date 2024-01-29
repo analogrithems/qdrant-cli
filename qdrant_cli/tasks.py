@@ -574,9 +574,9 @@ def rebalance_cluster(
                     "replication_factor": replicas,
                 }
 
-                p_log(f"Trying to recreate collection: {collection_args}")
+                p_log(f"Trying to recreate collection: {collection_args}", "info")
                 response = client.recreate_collection(**collection_args)
-                p_log(f"Recreate Collection response: {response}")
+                p_log(f"Recreate Collection response: {response}", "info")
 
                 if points:
                     p_log(
@@ -586,7 +586,7 @@ def rebalance_cluster(
                     response = client.upsert(
                         collection_name=collection, wait=True, points=points
                     )
-                    p_log(f"Upsert response: {response}")
+                    p_log(f"Upsert response: {response}", "info")
                 else:
                     p_log(f"No points to upsert, skipping", "info")
 
