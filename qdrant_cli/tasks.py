@@ -575,18 +575,22 @@ def rebalance_cluster(
                 }
 
                 p_log(f"Trying to recreate collection: {collection_args}")
-                # @TODO get some better error checking in here
                 response = client.recreate_collection(**collection_args)
+                p_log(f"Recreate Collection response: {response}")
 
-                # @TODO get some better error checking in here
                 if points:
+                    p_log(
+                        f"Inserting {len(points)} points in to collection: {collection}",
+                        "info",
+                    )
                     response = client.upsert(
                         collection_name=collection, wait=True, points=points
                     )
+                    p_log(f"Upsert response: {response}")
                 else:
                     p_log(f"No points to upsert, skipping", "info")
 
-                p_log(f"Done Rebalancing collection: {collection}", "info")
+                p_log(f"... Done Rebalancing collection: {collection}", "info")
 
             except Exception:
                 logger.error(f"Error rebalancing cluster collection: {collection}\n")
