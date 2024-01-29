@@ -1261,7 +1261,7 @@ def migrate_node(c, src, dest):
     for collection in collections.collections:
         print(f"Starting to migrate collection: {collection.name}")
         try:
-            dest_client = qdrant_client.QdrantClient(dest, timeout=1000)
+            dest_client = qdrant_client.QdrantClient(dest, timeout=timeout)
 
             print(f"\tCreating snapshot for {src}/collections/{collection.name}")
             snapshot_info = client.create_snapshot(
