@@ -1243,6 +1243,51 @@ def recover_shard_snapshot(
         return -2
 
 
+@task(
+    help={
+        "src": "The source server url ",
+        "dest": "The destination server url",
+    },
+)
+def migrate_node(c, src, dest):
+    """
+    migrate_node - This will snapshot and restore all collections from a src server to a destination server
+    if using in a cluster run this for each node.
+
+    """
+    client = QdrantClient(src)
+
+    collections = client.get_collections()
+    for collection in collections.collections:
+        print(f"Starting to migrate collection: {collection.name}")
+        try:
+            dest_client = QdrantClient(dest, timeout=1000)
+
+            print(f"\tCreating snapshot for {src}/collections/{collection.name}")
+            snapshot_info = client.create_snapshot(
+                collection_name=collection.name, wait="true"
+            )
+            snapshot_url = (
+                f"{src}/collections/{collection.name}/snapshots/{snapshot_info.name}"
+            )
+            snapshot_name = os.path.basename(snapshot_url)
+
+            url = f"{dest}/collections/{collection.name}/snapshots/upload?priority=snapshot"
+            print(f"\tRestoring to: {url} ")
+            dest_client.recover_snapshot(
+                collection_name=collection.name,
+                location=snapshot_url,
+                priority="snapshot",
+                wait="true",
+            )
+            print(f"\tFinished with restore!\n")
+
+        except Exception:
+            print(f"Error migrating {dest}/collections/{collection.name}\n\n\n")
+            traceback.print_exc(file=sys.stdout)
+            continue
+
+
 def out_formatter(output=None, format="json"):
     if format.lower() == "json":
         logger.error(
