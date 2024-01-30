@@ -1256,7 +1256,7 @@ def migrate_node(c, src, dest, collection=None):
     if using in a cluster run this for each node.
 
     """
-    client = qdrant_client.QdrantClient(src)
+    client = qdrant_client.QdrantClient(src, timeout=timeout)
 
     collections = client.get_collections()
     for _collection in collections.collections:
@@ -1309,7 +1309,7 @@ def delete_all_collections(c, server="http://localhost:6333", format="json"):
 
     """
     server = os.environ.get("QDRANT_SERVER", server)
-    client = qdrant_client.QdrantClient(server)
+    client = qdrant_client.QdrantClient(server, timeout=timeout)
 
     collections = client.get_collections()
     for collection in collections.collections:
