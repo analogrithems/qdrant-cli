@@ -1325,7 +1325,7 @@ def delete_all_collections(c, server="http://localhost:6333", format="json"):
 
 def out_formatter(output=None, format="json"):
     if format.lower() == "json":
-        logger.error(
+        print(
             json.dumps(
                 output,
                 default=lambda o: o.__dict__,
@@ -1335,7 +1335,7 @@ def out_formatter(output=None, format="json"):
         )
 
     elif format.lower() == "yaml":
-        logger.error(dump(output, Dumper=Dumper))
+        print(dump(output, Dumper=Dumper))
     else:
         logger.error("No output format selected")
 

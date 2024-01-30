@@ -24,7 +24,7 @@ Please make sure you have the following installed before install reform
 The first thing you need to do is install qdrant-cli.  Currently the simplest way to do this is
 
 ```
-pip install git+https://git@github.com/analogrithems/qdrant-cli.git
+pip install git+https://github.com/analogrithems/qdrant-cli.git
 ```
 
 
