@@ -1247,9 +1247,10 @@ def recover_shard_snapshot(
     help={
         "src": "The source server url ",
         "dest": "The destination server url",
+        "collection": "Only migrate a specific collection",
     },
 )
-def migrate_node(c, src, dest):
+def migrate_node(c, src, dest, collection=None):
     """
     migrate_node - This will snapshot and restore all collections from a src server to a destination server
     if using in a cluster run this for each node.
@@ -1258,24 +1259,28 @@ def migrate_node(c, src, dest):
     client = qdrant_client.QdrantClient(src)
 
     collections = client.get_collections()
-    for collection in collections.collections:
-        print(f"Starting to migrate collection: {collection.name}")
+    for _collection in collections.collections:
+        if collection and collection != _collection:
+            continue
+
+        print(f"Starting to migrate collection: {_collection.name}")
+
         try:
             dest_client = qdrant_client.QdrantClient(dest, timeout=timeout)
 
-            print(f"\tCreating snapshot for {src}/collections/{collection.name}")
+            print(f"\tCreating snapshot for {src}/collections/{_collection.name}")
             snapshot_info = client.create_snapshot(
-                collection_name=collection.name, wait="true"
+                collection_name=_collection.name, wait="true"
             )
             snapshot_url = (
-                f"{src}/collections/{collection.name}/snapshots/{snapshot_info.name}"
+                f"{src}/collections/{_collection.name}/snapshots/{snapshot_info.name}"
             )
             snapshot_name = os.path.basename(snapshot_url)
 
-            url = f"{dest}/collections/{collection.name}/snapshots/upload?priority=snapshot"
+            url = f"{dest}/collections/{_collection.name}/snapshots/upload?priority=snapshot"
             print(f"\tRestoring to: {url} ")
             dest_client.recover_snapshot(
-                collection_name=collection.name,
+                collection_name=_collection.name,
                 location=snapshot_url,
                 priority="snapshot",
                 wait="true",
@@ -1283,7 +1288,7 @@ def migrate_node(c, src, dest):
             print(f"\tFinished with restore!\n")
 
         except Exception:
-            print(f"Error migrating {dest}/collections/{collection.name}\n\n\n")
+            print(f"Error migrating {dest}/collections/{_collection.name}\n\n\n")
             traceback.print_exc(file=sys.stdout)
             continue
 
