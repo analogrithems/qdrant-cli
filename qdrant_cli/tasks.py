@@ -1263,12 +1263,14 @@ def migrate_node(c, src, dest, collection=None):
         if collection and collection != _collection:
             continue
 
-        print(f"Starting to migrate collection: {_collection.name}")
+        p_log(f"Starting to migrate collection: {_collection.name}", "info")
 
         try:
             dest_client = qdrant_client.QdrantClient(dest, timeout=timeout)
 
-            print(f"\tCreating snapshot for {src}/collections/{_collection.name}")
+            p_log(
+                f"\tCreating snapshot for {src}/collections/{_collection.name}", "info"
+            )
             snapshot_info = client.create_snapshot(
                 collection_name=_collection.name, wait="true"
             )
@@ -1278,17 +1280,17 @@ def migrate_node(c, src, dest, collection=None):
             snapshot_name = os.path.basename(snapshot_url)
 
             url = f"{dest}/collections/{_collection.name}/snapshots/upload?priority=snapshot"
-            print(f"\tRestoring to: {url} ")
+            p_log(f"\tRestoring to: {url} ")
             dest_client.recover_snapshot(
                 collection_name=_collection.name,
                 location=snapshot_url,
                 priority="snapshot",
                 wait="true",
             )
-            print(f"\tFinished with restore!\n")
+            p_log(f"\tFinished with restore!\n")
 
         except Exception:
-            print(f"Error migrating {dest}/collections/{_collection.name}\n\n\n")
+            p_log(f"Error migrating {dest}/collections/{_collection.name}\n\n\n")
             traceback.print_exc(file=sys.stdout)
             continue
 
@@ -1311,12 +1313,12 @@ def delete_all_collections(c, server="http://localhost:6333", format="json"):
 
     collections = client.get_collections()
     for collection in collections.collections:
-        print(f"Starting to delete collection: {collection.name}")
+        p_log(f"Starting to delete collection: {collection.name}", "info")
         try:
             config = client.delete_collection(collection.name)
 
         except Exception:
-            print(f"Error deleteing {collection.name}\n\n\n")
+            logger.error(f"Error deleteing {collection.name}\n\n\n")
             traceback.print_exc(file=sys.stdout)
             return -3
 
