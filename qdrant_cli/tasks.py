@@ -1272,7 +1272,7 @@ def migrate_node(c, src, dest, collection=None):
                 f"\tCreating snapshot for {src}/collections/{_collection.name}", "info"
             )
             snapshot_info = client.create_snapshot(
-                collection_name=_collection.name, wait="true"
+                collection_name=_collection.name, wait=True
             )
             snapshot_url = (
                 f"{src}/collections/{_collection.name}/snapshots/{snapshot_info.name}"
@@ -1285,7 +1285,7 @@ def migrate_node(c, src, dest, collection=None):
                 collection_name=_collection.name,
                 location=snapshot_url,
                 priority="snapshot",
-                wait="true",
+                wait=True,
             )
             p_log(f"\tFinished with restore!\n")
 
