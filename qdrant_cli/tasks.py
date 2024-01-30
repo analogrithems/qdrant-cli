@@ -556,21 +556,16 @@ def rebalance_cluster(
         dest_client = qdrant_client.QdrantClient(dest, timeout=timeout)
         collections = client.get_collections()
         remaining = total = len(collections.collections)
+
+        # for scrolling src
+        headers = {"Content-Type": "application/json"}
+        url = f"{server}/collections/{collection}/points/scroll"
         for collection in collections.collections:
             remaining -= 1
             collection = collection.name
             p_log(f"Rebalancing collection: {collection} ({remaining}/{total})", "info")
 
             try:
-                p_log(f"Fetching points for: {collection} ({remaining}/{total})")
-                points = _scroll(collection=collection, server=server)
-
-                if len(points) < 1:
-                    logger.warn(
-                        f"No points, skipping recreate: {collection} ({remaining}/{total})"
-                    )
-                    continue
-
                 p_log(f"Fetching vector_config for: {collection} ({remaining}/{total})")
                 vector_config = _get_vector_config(collection, server)
 
@@ -602,29 +597,45 @@ def rebalance_cluster(
                     "info",
                 )
 
-                if points:
-                    if len(points) > 1000:
-                        for batch in chunks(points, 1000):
-                            p_log(
-                                f"Inserting another {len(batch)} points in to collection: {collection}",
-                                "info",
-                            )
-                            response = dest_client.upsert(
-                                collection_name=collection, wait=True, points=batch
-                            )
-                    else:
-                        p_log(
-                            f"Inserting {len(points)} points in to collection: {collection}",
-                            "info",
-                        )
+                p_log(f"Fetching points for: {collection} ({remaining}/{total})")
+                # Fetching all points is way too heavy, we should chunk results over 1k
+                try:
+                    has_more = True
+                    scroll_args = {
+                        "collection_name": collection,
+                        "with_payload": True,
+                        "with_vector": True,
+                        "limit": 1000,
+                    }
+
+                    points = []
+                    while has_more:
+                        has_more = False
+                        response = requests.post(url, json=scroll_args, headers=headers)
+                        response = json.loads(response.text)
+
+                        if response["result"]["next_page_offset"] != None:
+                            next = response["result"]["next_page_offset"]
+                        else:
+                            next = None
+
                         response = dest_client.upsert(
                             collection_name=collection, wait=True, points=points
                         )
-                    p_log(f"Upsert response: {response} ({remaining}/{total})", "info")
-                else:
-                    p_log(
-                        f"No points to upsert, skipping ({remaining}/{total})", "info"
-                    )
+
+                        if next:
+                            has_more = True
+                            scroll_args["offset"] = next
+
+                    p_log(f"_scroll Found {len(points)} points in {collection}", "info")
+                    return points
+                except qdrant_client.http.exceptions.ResponseHandlingException as e:
+                    logger.error(f"Failed to connect to {server}: {e}")
+                    return -1
+                except Exception:
+                    logger.error(f"Error scrolling points on {url}")
+                    traceback.print_exc(file=sys.stderr)
+                    return -2
 
                 p_log(
                     f"... Done Rebalancing collection: {collection} ({remaining}/{total})",
