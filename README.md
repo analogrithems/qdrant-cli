@@ -41,10 +41,12 @@ Then set your QDRANT_SERVER environment variable to
 ```
 $ export QDRANT_SERVER=http://localhost:6333
 ```
+
 ## Helpful Commands
 In addition to the standard qdrant-client api calls, we've also creates some of our own such as `rebalance-cluster`
 
-This command will copy all collections from *--src* server to *--dest* server while setting the shards to 5 and replicas to 3
+This command will copy all collections from `--src` server to `--dest` server while setting the shards to 5 and replicas to 3
+
 ```
  $ qdrant rebalance-cluster --shards 5 --replicas 3 --src http://qdrant-yurts.default:6333 --dest http://qdrant.qdrant:6333
 ```
