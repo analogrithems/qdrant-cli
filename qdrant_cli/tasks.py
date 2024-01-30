@@ -559,10 +559,10 @@ def rebalance_cluster(
 
         # for scrolling src
         headers = {"Content-Type": "application/json"}
-        url = f"{server}/collections/{collection}/points/scroll"
         for collection in collections.collections:
             remaining -= 1
             collection = collection.name
+            url = f"{server}/collections/{collection}/points/scroll"
             p_log(f"Rebalancing collection: {collection} ({remaining}/{total})", "info")
 
             try:
