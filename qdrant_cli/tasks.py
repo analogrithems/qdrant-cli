@@ -603,7 +603,7 @@ def rebalance_cluster(
                         "collection_name": collection,
                         "with_payload": True,
                         "with_vector": True,
-                        "limit": 5000,
+                        "limit": 4000,
                     }
 
                     points = []
@@ -635,7 +635,8 @@ def rebalance_cluster(
                         response = dest_client.upsert(
                             collection_name=collection, wait=True, points=points
                         )
-                    p_log(f"{points_total} points copied", "info")
+
+                    p_log(f"{points_total} total points copied", "info")
 
                 except qdrant_client.http.exceptions.ResponseHandlingException as e:
                     logger.error(f"Failed to connect to {server}: {e}")
