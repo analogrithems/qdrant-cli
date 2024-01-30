@@ -93,7 +93,7 @@ def _scroll(
                 has_more = True
                 scroll_args["offset"] = next
 
-        p_log(f"Found {len(points)} points in {collection}", "info")
+        p_log(f"_scroll Found {len(points)} points in {collection}", "info")
         return points
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
         logger.error(f"Failed to connect to {server}: {e}")
