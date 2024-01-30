@@ -605,7 +605,7 @@ def rebalance_cluster(
                         "collection_name": collection,
                         "with_payload": True,
                         "with_vector": True,
-                        "limit": 10000,
+                        "limit": 5000,
                     }
 
                     points = []
