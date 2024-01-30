@@ -1260,7 +1260,7 @@ def migrate_node(c, src, dest, collection=None):
 
     collections = client.get_collections()
     for _collection in collections.collections:
-        if collection and collection != _collection:
+        if collection and collection != _collection.name:
             continue
 
         p_log(f"Starting to migrate collection: {_collection.name}", "info")
