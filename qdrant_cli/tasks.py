@@ -554,11 +554,15 @@ def rebalance_cluster(
         collections = client.get_collections()
         for collection in client.get_collections().collections:
             collection = collection.name
-            p_log(f"Rebalancing collection: {collection}", "INFO")
+            p_log(f"Rebalancing collection: {collection}", "info")
 
             try:
                 p_log(f"Fetching points for: {collection}")
                 points = _scroll(collection=collection, server=server)
+
+                if len(points) < 1:
+                    logger.warn(f"No points, skipping recreate: {collection}")
+                    continue
 
                 p_log(f"Fetching vector_config for: {collection}")
                 vector_config = _get_vector_config(collection, server)
