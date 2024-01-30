@@ -48,9 +48,9 @@ def chunks(xs, n):
 
 def _scroll(
     collection,
+    limit=None,
     filter=None,
     offset=None,
-    limit=1000,
     server="http://localhost:6333",
 ):
     """
@@ -493,7 +493,7 @@ def rebalance(
     server = os.environ.get("QDRANT_SERVER", server)
     try:
         client = qdrant_client.QdrantClient(server, timeout=timeout)
-        points = _scroll(collection=collection, server=server)
+        points = _scroll(collection=collection, server=server, limit=1000)
         vector_config = _get_vector_config(collection, server)
 
         # Make new collection to test the zerox
@@ -532,7 +532,8 @@ def rebalance(
         "shards": "How many shards should we have this time?",
         "replicas": "How many copies should we keep you need at least 2 for redunancy",
         "overwrite": "Reuse the collections name Default to false and make {collection}-new",
-        "server": "Server address of qdrant default: 'http://localhost:6333'",
+        "src": "Server address of qdrant reads default: 'http://localhost:6333'",
+        "dest": "Server address of qdrant writes default: 'http://localhost:6333'",
         "format": "output format of the response [JSON|YAML]",
     }
 )
@@ -541,16 +542,18 @@ def rebalance_cluster(
     shards,
     replicas,
     overwrite=True,
-    server="http://localhost:6333",
+    src="http://localhost:6333",
+    dest="http://localhost:6333",
     format="json",
 ):
     """
     Rebalance all collections in the cluster.
     Warning: This is crazy dangerous, do not cancel or interrupt
     """
-    server = os.environ.get("QDRANT_SERVER", server)
+    server = os.environ.get("QDRANT_SERVER", src)
     try:
         client = qdrant_client.QdrantClient(server, timeout=timeout)
+        dest_client = qdrant_client.QdrantClient(dest, timeout=timeout)
         collections = client.get_collections()
         remaining = total = len(collections.collections)
         for collection in collections.collections:
@@ -593,7 +596,7 @@ def rebalance_cluster(
                     f"Trying to recreate collection: {collection_args} ({remaining}/{total})",
                     "info",
                 )
-                response = client.recreate_collection(**collection_args)
+                response = dest_client.recreate_collection(**collection_args)
                 p_log(
                     f"Recreate Collection response: {response} ({remaining}/{total})",
                     "info",
@@ -606,7 +609,7 @@ def rebalance_cluster(
                                 f"Inserting another {len(batch)} points in to collection: {collection}",
                                 "info",
                             )
-                            response = client.upsert(
+                            response = dest_client.upsert(
                                 collection_name=collection, wait=True, points=batch
                             )
                     else:
@@ -614,7 +617,7 @@ def rebalance_cluster(
                             f"Inserting {len(points)} points in to collection: {collection}",
                             "info",
                         )
-                        response = client.upsert(
+                        response = dest_client.upsert(
                             collection_name=collection, wait=True, points=points
                         )
                     p_log(f"Upsert response: {response} ({remaining}/{total})", "info")
