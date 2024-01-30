@@ -609,6 +609,7 @@ def rebalance_cluster(
                     }
 
                     points = []
+                    points_total = 0
                     while has_more:
                         has_more = False
                         response = requests.post(url, json=scroll_args, headers=headers)
@@ -627,6 +628,8 @@ def rebalance_cluster(
                         if len(points) < 1:
                             continue
 
+                        points_total += len(points)
+
                         p_log(
                             f"chunking another {len(points)} points in {collection}",
                             "info",
@@ -634,6 +637,7 @@ def rebalance_cluster(
                         response = dest_client.upsert(
                             collection_name=collection, wait=True, points=points
                         )
+                    p_log(f"{points_total} points copied", "info")
 
                 except qdrant_client.http.exceptions.ResponseHandlingException as e:
                     logger.error(f"Failed to connect to {server}: {e}")
