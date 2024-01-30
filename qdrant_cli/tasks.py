@@ -50,7 +50,7 @@ def _scroll(
     collection,
     filter=None,
     offset=None,
-    limit=None,
+    limit=1000,
     server="http://localhost:6333",
 ):
     """
