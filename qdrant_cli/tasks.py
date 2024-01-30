@@ -552,26 +552,31 @@ def rebalance_cluster(
     try:
         client = qdrant_client.QdrantClient(server, timeout=timeout)
         collections = client.get_collections()
-        for collection in client.get_collections().collections:
+        remaining = total = len(collections.collections)
+        for collection in collections.collections:
             collection = collection.name
-            p_log(f"Rebalancing collection: {collection}", "info")
+            p_log(f"Rebalancing collection: {collection} ({remaining}/{total})", "info")
 
             try:
-                p_log(f"Fetching points for: {collection}")
+                p_log(f"Fetching points for: {collection} ({remaining}/{total})")
                 points = _scroll(collection=collection, server=server)
 
                 if len(points) < 1:
-                    logger.warn(f"No points, skipping recreate: {collection}")
+                    logger.warn(
+                        f"No points, skipping recreate: {collection} ({remaining}/{total})"
+                    )
                     continue
 
-                p_log(f"Fetching vector_config for: {collection}")
+                p_log(f"Fetching vector_config for: {collection} ({remaining}/{total})")
                 vector_config = _get_vector_config(collection, server)
 
                 # Make new collection to test the zerox
                 if overwrite == False:
                     collection = f"{collection}-new"
                 else:
-                    logger.warn(f"Overriting collection: {collection}")
+                    logger.warn(
+                        f"Overriting collection: {collection} ({remaining}/{total})"
+                    )
 
                 collection_args = {
                     "collection_name": collection,
@@ -583,9 +588,15 @@ def rebalance_cluster(
                     "replication_factor": replicas,
                 }
 
-                p_log(f"Trying to recreate collection: {collection_args}", "info")
+                p_log(
+                    f"Trying to recreate collection: {collection_args} ({remaining}/{total})",
+                    "info",
+                )
                 response = client.recreate_collection(**collection_args)
-                p_log(f"Recreate Collection response: {response}", "info")
+                p_log(
+                    f"Recreate Collection response: {response} ({remaining}/{total})",
+                    "info",
+                )
 
                 if points:
                     if len(points) > 1000:
@@ -605,16 +616,25 @@ def rebalance_cluster(
                         response = client.upsert(
                             collection_name=collection, wait=True, points=points
                         )
-                    p_log(f"Upsert response: {response}", "info")
+                    p_log(f"Upsert response: {response} ({remaining}/{total})", "info")
                 else:
-                    p_log(f"No points to upsert, skipping", "info")
+                    p_log(
+                        f"No points to upsert, skipping ({remaining}/{total})", "info"
+                    )
 
-                p_log(f"... Done Rebalancing collection: {collection}", "info")
+                p_log(
+                    f"... Done Rebalancing collection: {collection} ({remaining}/{total})",
+                    "info",
+                )
 
             except Exception:
-                logger.error(f"Error rebalancing cluster collection: {collection}\n")
+                logger.error(
+                    f"Error rebalancing cluster collection: {collection} ({remaining}/{total})\n"
+                )
                 traceback.print_exc(file=sys.stderr)
                 return -2
+
+        remaining -= 1
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
         logger.error(f"Failed to connect to {server}: {e}")
         return -1
@@ -1263,17 +1283,22 @@ def migrate_node(c, src, dest, collection=None):
     client = qdrant_client.QdrantClient(src, timeout=timeout)
 
     collections = client.get_collections()
+    remaining = total = len(collections.collections)
     for _collection in collections.collections:
         if collection and collection != _collection.name:
             continue
 
-        p_log(f"Starting to migrate collection: {_collection.name}", "info")
+        p_log(
+            f"Starting to migrate collection: {_collection.name} ({remaining}/{total})",
+            "info",
+        )
 
         try:
             dest_client = qdrant_client.QdrantClient(dest, timeout=timeout)
 
             p_log(
-                f"\tCreating snapshot for {src}/collections/{_collection.name}", "info"
+                f"\tCreating snapshot for {src}/collections/{_collection.name} ({remaining}/{total})",
+                "info",
             )
             snapshot_info = client.create_snapshot(
                 collection_name=_collection.name, wait=True
@@ -1284,19 +1309,23 @@ def migrate_node(c, src, dest, collection=None):
             snapshot_name = os.path.basename(snapshot_url)
 
             url = f"{dest}/collections/{_collection.name}/snapshots/upload?priority=snapshot"
-            p_log(f"\tRestoring to: {url} ")
+            p_log(f"\tRestoring to: {url} ({remaining}/{total})")
             dest_client.recover_snapshot(
                 collection_name=_collection.name,
                 location=snapshot_url,
                 priority="snapshot",
                 wait=True,
             )
-            p_log(f"\tFinished with restore!\n")
+            p_log(f"\tFinished with restore! ({remaining}/{total})\n")
 
         except Exception:
-            p_log(f"Error migrating {dest}/collections/{_collection.name}\n\n\n")
+            p_log(
+                f"Error migrating {dest}/collections/{_collection.name} ({remaining}/{total})\n\n\n"
+            )
             traceback.print_exc(file=sys.stdout)
             continue
+
+        remaining -= 1
 
 
 @task(
@@ -1316,15 +1345,23 @@ def delete_all_collections(c, server="http://localhost:6333", format="json"):
     client = qdrant_client.QdrantClient(server, timeout=timeout)
 
     collections = client.get_collections()
+    remaining = total = len(collections.collections)
     for collection in collections.collections:
-        p_log(f"Starting to delete collection: {collection.name}", "info")
+        p_log(
+            f"Starting to delete collection: {collection.name} ({remaining}/{total})",
+            "info",
+        )
         try:
             config = client.delete_collection(collection.name)
 
         except Exception:
-            logger.error(f"Error deleteing {collection.name}\n\n\n")
+            logger.error(
+                f"Error deleteing {collection.name} ({remaining}/{total})\n\n\n"
+            )
             traceback.print_exc(file=sys.stdout)
             return -3
+
+        remaining -= 1
 
 
 def out_formatter(output=None, format="json"):
