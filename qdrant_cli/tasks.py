@@ -554,6 +554,7 @@ def rebalance_cluster(
         collections = client.get_collections()
         remaining = total = len(collections.collections)
         for collection in collections.collections:
+            remaining -= 1
             collection = collection.name
             p_log(f"Rebalancing collection: {collection} ({remaining}/{total})", "info")
 
@@ -634,7 +635,6 @@ def rebalance_cluster(
                 traceback.print_exc(file=sys.stderr)
                 return -2
 
-        remaining -= 1
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
         logger.error(f"Failed to connect to {server}: {e}")
         return -1
@@ -1285,6 +1285,7 @@ def migrate_node(c, src, dest, collection=None):
     collections = client.get_collections()
     remaining = total = len(collections.collections)
     for _collection in collections.collections:
+        remaining -= 1
         if collection and collection != _collection.name:
             continue
 
@@ -1324,8 +1325,6 @@ def migrate_node(c, src, dest, collection=None):
             )
             traceback.print_exc(file=sys.stdout)
             continue
-
-        remaining -= 1
 
 
 @task(
