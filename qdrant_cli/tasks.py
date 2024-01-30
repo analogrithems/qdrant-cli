@@ -619,20 +619,21 @@ def rebalance_cluster(
                         else:
                             next = None
 
+                        if next:
+                            has_more = True
+                            scroll_args["offset"] = next
+
                         points = response["result"]["points"]
+                        if len(points) < 1:
+                            continue
 
                         p_log(
                             f"chunking another {len(points)} points in {collection}",
                             "info",
                         )
-
                         response = dest_client.upsert(
                             collection_name=collection, wait=True, points=points
                         )
-
-                        if next:
-                            has_more = True
-                            scroll_args["offset"] = next
 
                 except qdrant_client.http.exceptions.ResponseHandlingException as e:
                     logger.error(f"Failed to connect to {server}: {e}")
