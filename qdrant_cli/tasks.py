@@ -619,6 +619,8 @@ def rebalance_cluster(
                         else:
                             next = None
 
+                        points = response["result"]["points"]
+
                         response = dest_client.upsert(
                             collection_name=collection, wait=True, points=points
                         )
