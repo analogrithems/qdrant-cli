@@ -36,9 +36,7 @@ def p_log(msg, severity="debug"):
     This function will output to the console useful information.
     """
     run_time = time.process_time()
-    logger.log(
-        getattr(logging, severity.upper()), f"{severity.upper()}: {msg} | {run_time}"
-    )
+    logger.log(getattr(logging, severity.upper()), f"{msg} | {run_time}")
 
 
 def chunks(xs, n):
