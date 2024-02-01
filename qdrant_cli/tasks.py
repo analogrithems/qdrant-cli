@@ -93,9 +93,6 @@ def _scroll(
 
         p_log(f"_scroll Found {len(points)} points in {collection}", "info")
         return points
-    except qdrant_client.http.exceptions.ResponseHandlingException as e:
-        logger.error(f"Failed to connect to {server}: {e}")
-        return -1
     except Exception:
         logger.error(f"Error scrolling points on {url}")
         traceback.print_exc(file=sys.stderr)
@@ -738,7 +735,7 @@ def create_payload_index(
             field_name=field,
             field_schema=schema,
             field_type=type,
-            wait=(wait == True),
+            wait=wait,
             ordering=order,
         )
         out_formatter(response, format)
@@ -780,7 +777,7 @@ def delete_payload_index(
         response = client.create_payload_index(
             collection_name=collection,
             field_name=field,
-            wait=(wait == True),
+            wait=wait,
             ordering=order,
         )
         out_formatter(response, format)
@@ -914,7 +911,7 @@ def snapshot_collection(
     server = os.environ.get("QDRANT_SERVER", server)
     try:
         client = qdrant_client.QdrantClient(server, timeout=timeout)
-        status = client.create_snapshot(collection_name=collection, wait=(wait == True))
+        status = client.create_snapshot(collection_name=collection, wait=wait)
         out_formatter(status, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
         logger.error(f"Failed to connect to {server}: {e}")
@@ -1043,7 +1040,7 @@ def create_full_snapshot(c, wait=True, server="http://localhost:6333", format="j
     server = os.environ.get("QDRANT_SERVER", server)
     try:
         client = qdrant_client.QdrantClient(server, timeout=timeout)
-        response = client.create_full_snapshot(wait=(wait == True))
+        response = client.create_full_snapshot(wait=wait)
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
         logger.error(f"Failed to connect to {server}: {e}")
@@ -1073,9 +1070,7 @@ def delete_full_snapshot(
     server = os.environ.get("QDRANT_SERVER", server)
     try:
         client = qdrant_client.QdrantClient(server, timeout=timeout)
-        response = client.delete_full_snapshot(
-            snapshot_name=snapshot, wait=(wait == True)
-        )
+        response = client.delete_full_snapshot(snapshot_name=snapshot, wait=wait)
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
         logger.error(f"Failed to connect to {server}: {e}")
@@ -1117,7 +1112,7 @@ def recover_from_snapshot(
             collection_name=collection,
             location=location,
             priority=priority,
-            wait=(wait == True),
+            wait=wait,
         )
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
@@ -1152,7 +1147,7 @@ def list_shard_snapshots(
     try:
         client = qdrant_client.QdrantClient(server, timeout=timeout)
         response = client.list_shard_snapshots(
-            collection_name=collection, shard_id=shard, wait=(wait == True)
+            collection_name=collection, shard_id=shard, wait=wait
         )
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
@@ -1185,7 +1180,7 @@ def create_shard_snapshot(
     try:
         client = qdrant_client.QdrantClient(server, timeout=timeout)
         response = client.create_shard_snapshot(
-            collection_name=collection, shard_id=shard, wait=(wait == True)
+            collection_name=collection, shard_id=shard, wait=wait
         )
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
@@ -1226,9 +1221,9 @@ def delete_shard_snapshot(
         client = qdrant_client.QdrantClient(server, timeout=timeout)
         response = client.delete_shard_snapshot(
             collection_name=collection,
-            snapshot_id=snapshot,
+            snapshot_name=snapshot,
             shard_id=shard,
-            wait=(wait == True),
+            wait=wait,
         )
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
@@ -1276,7 +1271,7 @@ def recover_shard_snapshot(
             shard_id=shard,
             location=location,
             priority=priority,
-            wait=(wait == True),
+            wait=wait,
         )
         out_formatter(response, format)
     except qdrant_client.http.exceptions.ResponseHandlingException as e:
@@ -1384,6 +1379,63 @@ def delete_all_collections(c, server="http://localhost:6333", format="json"):
             return -3
 
         remaining -= 1
+
+
+@task(
+    autoprint=False,
+    help={
+        "wait": "Wait till it finishes to return Default: True",
+        "server": "Server address of qdrant default: 'http://localhost:6333'",
+        "format": "output format of the response [JSON|YAML]",
+    },
+    optional=["wait", "format", "server"],
+)
+def create_cluster_snapshot(
+    c, wait=True, server="http://localhost:6333", format="json"
+):
+    """
+    This will create a snapshot of each collection on each node in the cluster
+    and then return it to the user in a snapshot file.
+    """
+    client = qdrant_client.QdrantClient(server, timeout=timeout)
+
+    collections = client.get_collections()
+    total = len(collections.collections)
+    _count = 0
+    for _collection in collections.collections:
+        _count += 1
+        p_log(
+            f"Starting to snapsh0t collection: {_collection.name} ({_count}/{total})",
+            "info",
+        )
+
+        for id, node in client.http.cluster_api.cluster_status().result.peers.items():
+            try:
+                node = node.uri.replace("6335", "6333").strip("/")
+                node_client = qdrant_client.QdrantClient(node, timeout=timeout)
+                p_log(f"Node: {node} & {_collection.name}", "info")
+
+                snapshot_info = node_client.create_snapshot(
+                    collection_name=_collection.name, wait=True
+                )
+                snapshot_name = snapshot_info.name
+                snapshot_url = (
+                    f"{node}/collections/{_collection.name}/snapshots/{snapshot_name}"
+                )
+                p_log(
+                    f"Snapshot created for: {node}/collections/{_collection.name} ({_count}/{total})",
+                    "info",
+                )
+                _fetch_snapshot(
+                    snapshot_url,
+                    f"{SNAPSHOT_DOWNLOAD_PATH}/{node}/collections/{_collection.name}/snapshots/{snapshot_name}",
+                )
+            except Exception:
+                p_log(
+                    f"Error creating snapshot for: {node}/collections/{_collection.name} ({_count}/{total})",
+                    "error",
+                )
+                traceback.print_exc(file=sys.stdout)
 
 
 def out_formatter(output=None, format="json"):

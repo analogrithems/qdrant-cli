@@ -639,16 +639,6 @@ files = [
 typing-extensions = ">=4.6.0,<4.7.0 || >4.7.0"
 
 [[package]]
-name = "pyinvoke"
-version = "1.0.4"
-description = ""
-optional = false
-python-versions = "*"
-files = [
-    {file = "pyinvoke-1.0.4.tar.gz", hash = "sha256:0b96de9e8ed5b6d681bc761ed6758087998b1a84f84b09811f7d5401d64dea7e"},
-]
-
-[[package]]
 name = "pywin32"
 version = "306"
 description = "Python for Window Extensions"
@@ -854,4 +844,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "cc8157a0f1dd0326d74467ed8413a3eb1a899c58587fa7748e2d9d5064e01a31"
+content-hash = "e8d5242a5ee7bd5824f766049a2775a636c53f8cb7e34e0874c8795463c40bd6"
