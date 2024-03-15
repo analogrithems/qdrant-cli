@@ -6,6 +6,19 @@ probably happen if you do not know what you are doing.
 
 It makes use of pyinvoke to just map the qdrant-client functions to subcommands of pyInvoke.
 
+See: https://qdrant.tech/documentation/faq/qdrant-fundamentals/?selector=aHRtbCA%2BIGJvZHkgPiBkaXY6bnRoLW9mLXR5cGUoMSkgPiBzZWN0aW9uID4gZGl2ID4gZGl2ID4gZGl2Om50aC1vZi10eXBlKDIpID4gYXJ0aWNsZSA%2BIHA6bnRoLW9mLXR5cGUoMTYp&q=upgrade
+
+### Versioning
+#### Do you support downgrades?
+We do not support downgrading a cluster on any of our products. If you deploy a newer version of Qdrant, your data is automatically migrated to the newer storage format. This migration is not reversible.
+
+#### How do I avoid issues when updating to the latest version?
+We only guarantee compatibility if you update between consecutive versions. You would need to upgrade versions one at a time: 1.1 -> 1.2, then 1.2 -> 1.3, then 1.3 -> 1.4.
+
+#### Do you guarantee compatibility across versions?
+In case your version is older, we only guarantee compatibility between two consecutive minor versions. This also applies to client versions. Ensure your client version is never more than one minor version away from your cluster version. While we will assist with break/fix troubleshooting of issues and errors specific to our products, Qdrant is not accountable for reviewing, writing (or rewriting), or debugging custom code.
+
+
 ## Requirements
 
 Please make sure you have the following installed before install reform
