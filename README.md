@@ -73,33 +73,36 @@ You can see all the commands with qdrant --list
 $ qdrant -l
 Subcommands:
 
-  create-collection        Create a collection with all the fixins
-  create-full-snapshot     This will create a full snapshot of the server
-  create-payload-index     Create an index on a payload
-  create-shard-snapshot    This will create a new shard of a given collection
-  delete-cluster-peer      Delete a peer in the cluster
-  delete-collection        Delete a specified collectoin
-  delete-full-snapshot     This will delete a full snapshot of the server
-  delete-payload-index     Delete an index on a payload
-  delete-shard-snapshot    This will delete the snapshot for a given collection/shard
-  delete-snapshot          Delete a specific snapshot DELETE "{server}/collections/{collection}/snapshots/{snapshot}"
-  download-full-snapshot   Download a full snapshot.  If running in a cluster you must snapshot each node
-  download-snapshot        Download a specific snapshot from a collection
-  get-aliases              Get a list of aliases
-  get-cluster              List the cluster details for the given server
-  get-collection           Return the details on a specific collection
-  get-collection-cluster   List the cluster details of a given collection
-  get-collections          List the collections in our qdrant server
-  get-locks                Fetch a list of locks on qdrant
-  get-snapshots            Get a list of snapshots for a given collection or list all snapshots for all collections if no --collection-id is given
-  list-full-snapshots      This will list full snapshots of the server
-  list-shard-snapshots     This will list the shards of a given collection
-  rebalance                Rebalance is used to change a collections sharding and replica configuration
-  rebalance-cluster        Rebalance all collections in the cluster.
-  recover-from-snapshot    This will try to recover a collection from the snapshot at the specified location
-  recover-shard-snapshot   This will create a new shard of a given collection
-  scroll                   Scroll request - paginate over all points which matches given filtering condition
-  snapshot-collection      Create a snapshot of a given collection.
+  create-cluster-snapshot   This will create a snapshot of each collection on each node in the cluster
+  create-collection         Create a collection with all the fixins
+  create-full-snapshot      This will create a full snapshot of the server
+  create-payload-index      Create an index on a payload
+  create-shard-snapshot     This will create a new shard of a given collection
+  delete-all-collections    delete-all-collections - this delete nuke every collection in your qdrant server.
+  delete-cluster-peer       Delete a peer in the cluster
+  delete-collection         Delete a specified collectoin
+  delete-full-snapshot      This will delete a full snapshot of the server
+  delete-payload-index      Delete an index on a payload
+  delete-shard-snapshot     This will delete the snapshot for a given collection/shard
+  delete-snapshot           Delete a specific snapshot DELETE "{server}/collections/{collection}/snapshots/{snapshot}"
+  download-full-snapshot    Download a full snapshot.  If running in a cluster you must snapshot each node
+  download-snapshot         Download a specific snapshot from a collection
+  get-aliases               Get a list of aliases
+  get-cluster               List the cluster details for the given server
+  get-collection            Return the details on a specific collection
+  get-collection-cluster    List the cluster details of a given collection
+  get-collections           List the collections in our qdrant server
+  get-locks                 Fetch a list of locks on qdrant
+  get-snapshots             Get a list of snapshots for a given collection or list all snapshots for all collections if no --collection-id is given
+  list-full-snapshots       This will list full snapshots of the server
+  list-shard-snapshots      This will list the shards of a given collection
+  migrate-node              migrate_node - This will snapshot and restore all collections from a src server to a destination server
+  rebalance                 Rebalance is used to change a collections sharding and replica configuration
+  rebalance-cluster         Rebalance all collections in the cluster.
+  recover-from-snapshot     This will try to recover a collection from the snapshot at the specified location
+  recover-shard-snapshot    This will create a new shard of a given collection
+  scroll                    Scroll request - paginate over all points which matches given filtering condition
+  snapshot-collection       Create a snapshot of a given collection.
 ```
 
 You can get deeper details about specific commands with the format `qdrant <subcommand> --help`
