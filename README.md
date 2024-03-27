@@ -58,13 +58,20 @@ $ export QDRANT_SERVER=http://localhost:6333
 ## Helpful Commands
 In addition to the standard qdrant-client api calls, we've also creates some of our own such as `rebalance-cluster`
 
-This command will copy all collections from `--src` server to `--dest` server while setting the shards to 5 and replicas to 3
+
+### Rebalance Cluster
+This command will copy all collections from `--src` server to `--dest` server while setting the shards to 10 and replicas to 3
 
 ```
- $ qdrant rebalance-cluster --shards 5 --replicas 3 --src http://qdrant-yurts.default:6333 --dest http://qdrant.qdrant:6333
+ $ qdrant rebalance-cluster --shards 10 --replicas 3 --src http://qdrant-yurts.default:6333 --dest http://qdrant.qdrant:6333
 ```
 
+### Snapshot Cluster
+The snapshot-cluster command will go to each collection on each node and snapshot it.  It then downloads the snapshots to a local file structure for restoring,
 
+```
+$ qdrant create-cluster-snapshot --server http://qdrant.qdrant:6333
+```
 
 ## Usage
 You can see all the commands with qdrant --list

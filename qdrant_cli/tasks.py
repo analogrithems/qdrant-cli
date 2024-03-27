@@ -5,7 +5,11 @@ import logging
 import sys
 import time
 import traceback
+
+import boto3
+
 from typing import Optional
+from datetime import date, time
 
 try:
     from yaml import CDumper as Dumper
@@ -1386,11 +1390,18 @@ def delete_all_collections(c, server="http://localhost:6333", format="json"):
         "wait": "Wait till it finishes to return Default: True",
         "server": "Server address of qdrant default: 'http://localhost:6333'",
         "format": "output format of the response [JSON|YAML]",
+        "bucket": "The bucket to store the snapshot in. (Optional)",
+        "bucket_path": "The path in the bucket to store the snapshot in",
     },
-    optional=["wait", "format", "server"],
+    optional=["wait", "format", "server", "bucket", "bucket_path"],
 )
 def create_cluster_snapshot(
-    c, wait=True, server="http://localhost:6333", format="json"
+    c,
+    wait=True,
+    server="http://localhost:6333",
+    format="json",
+    bucket=None,
+    bucket_path="",
 ):
     """
     This will create a snapshot of each collection on each node in the cluster
@@ -1398,6 +1409,7 @@ def create_cluster_snapshot(
     """
     client = qdrant_client.QdrantClient(server, timeout=timeout)
 
+    s3_client = boto3.client("s3")
     collections = client.get_collections()
     total = len(collections.collections)
     _count = 0
@@ -1424,10 +1436,35 @@ def create_cluster_snapshot(
                     f"Snapshot created for: {node}/collections/{_collection.name} ({_count}/{total})",
                     "info",
                 )
+                _file = f"{SNAPSHOT_DOWNLOAD_PATH}/{node}/collections/{_collection.name}/snapshots/{snapshot_name}"
+                _upload_path = f"{bucket_path}/{node}/collections/{_collection.name}/snapshots/{snapshot_name}"
+
                 _fetch_snapshot(
                     snapshot_url,
-                    f"{SNAPSHOT_DOWNLOAD_PATH}/{node}/collections/{_collection.name}/snapshots/{snapshot_name}",
+                    _file,
                 )
+                if bucket and bucket_path:
+                    _t = time()
+                    bucket_path = (
+                        bucket_path
+                        + "/QdrantBackups/"
+                        + date.today().year
+                        + "/"
+                        + date.today().month
+                        + "/"
+                        + date.today().day
+                        + f"/{_t.hour}-{_t.minute}-{_t.second}/"
+                    )
+                    try:
+
+                        s3_client.upload_file(_file, bucket, _upload_path)
+                        os.unlink(_file)
+                    except Exception:
+                        p_log(
+                            f"Error uploading snapshot for: {node}/collections/{_collection.name} to S3://{bucket}/{_upload_path} ({_count}/{total})",
+                            "error",
+                        )
+                        traceback.print_exc(file=sys.stdout)
             except Exception:
                 p_log(
                     f"Error creating snapshot for: {node}/collections/{_collection.name} ({_count}/{total})",
