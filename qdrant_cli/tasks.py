@@ -1436,32 +1436,22 @@ def create_cluster_snapshot(
                     f"Snapshot created for: {node}/collections/{_collection.name} ({_count}/{total})",
                     "info",
                 )
-                _file = f"{SNAPSHOT_DOWNLOAD_PATH}/{node}/collections/{_collection.name}/snapshots/{snapshot_name}"
-                _upload_path = f"{bucket_path}/{node}/collections/{_collection.name}/snapshots/{snapshot_name}"
+                _t = time.localtime()
+                _file = f"{SNAPSHOT_DOWNLOAD_PATH}/{node.replace('http://', '').replace(':', '_')}/collections/{_collection.name}/snapshots/{snapshot_name}"
+                _bucket_path = f"{bucket_path}/QdrantBackups/{_t.tm_year}/{_t.tm_mon}/{_t.tm_mday}/{_t.tm_hour}-{_t.tm_min}-{_t.tm_sec}"
+                _upload_path = f"{_bucket_path}/{node.replace('http://', '').replace(':', '_')}/collections/{_collection.name}/snapshots/{snapshot_name}"
 
                 _fetch_snapshot(
                     snapshot_url,
                     _file,
                 )
                 if bucket and bucket_path:
-                    _t = time()
-                    bucket_path = (
-                        bucket_path
-                        + "/QdrantBackups/"
-                        + date.today().year
-                        + "/"
-                        + date.today().month
-                        + "/"
-                        + date.today().day
-                        + f"/{_t.hour}-{_t.minute}-{_t.second}/"
-                    )
                     try:
-
                         s3_client.upload_file(_file, bucket, _upload_path)
                         os.unlink(_file)
                     except Exception:
                         p_log(
-                            f"Error uploading snapshot for: {node}/collections/{_collection.name} to S3://{bucket}/{_upload_path} ({_count}/{total})",
+                            f"Error uploading snapshot for: {node.replace('http://', '').replace(':', '_')}/collections/{_collection.name} to S3://{bucket}/{_upload_path} ({_count}/{total})",
                             "error",
                         )
                         traceback.print_exc(file=sys.stdout)
