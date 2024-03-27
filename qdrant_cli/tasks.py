@@ -9,7 +9,7 @@ import traceback
 import boto3
 
 from typing import Optional
-from datetime import date, time
+from datetime import date
 
 try:
     from yaml import CDumper as Dumper
