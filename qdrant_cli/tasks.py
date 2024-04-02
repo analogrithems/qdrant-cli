@@ -103,7 +103,7 @@ def _scroll(
         return -2
 
 
-def _fetch_snapshot(url, download_path):
+def _fetch_snapshot(url, download_path, zip=False):
     """
     This is a gernic
     """
@@ -122,10 +122,16 @@ def _fetch_snapshot(url, download_path):
             if not os.path.exists(os.path.dirname(download_path)):
                 logger.debug(f"Making directory: {os.path.dirname(download_path)}")
                 os.makedirs(os.path.dirname(download_path), mode=0o777, exist_ok=True)
-            with open(download_path, "wb") as file:
-                for data in response.iter_content(block_size):
-                    progress_bar.update(len(data))
-                    file.write(data)
+            if zip:
+                with gzip.open(f"download_path.gz", "wb") as file:
+                    for data in response.iter_content(block_size):
+                        progress_bar.update(len(data))
+                        file.writelines(data)
+            else:
+                with open(download_path, "wb") as file:
+                    for data in response.iter_content(block_size):
+                        progress_bar.update(len(data))
+                        file.write(data)
 
         if total_size != 0 and progress_bar.n != total_size:
             raise RuntimeError("Could not download file")
@@ -1441,10 +1447,8 @@ def create_cluster_snapshot(
                 _bucket_path = f"{bucket_path}/QdrantBackups/{_t.tm_year}/{_t.tm_mon}/{_t.tm_mday}/{_t.tm_hour}-{_t.tm_min}-{_t.tm_sec}"
                 _upload_path = f"{_bucket_path}/{node.replace('http://', '').replace(':', '_')}/collections/{_collection.name}/snapshots/{snapshot_name}"
 
-                _fetch_snapshot(
-                    snapshot_url,
-                    _file,
-                )
+                _fetch_snapshot(snapshot_url, _file, True)
+
                 if bucket and bucket_path:
                     try:
                         s3_client.upload_file(_file, bucket, _upload_path)
