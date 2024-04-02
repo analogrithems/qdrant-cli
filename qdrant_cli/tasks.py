@@ -49,21 +49,28 @@ def chunks(xs, n):
 
 
 def _scroll(
-    collection,
-    limit=None,
-    filter=None,
-    offset=None,
-    server="http://localhost:6333",
+    collection: str,
+    limit: Optional[int] = None,
+    filter: Optional[dict] = None,
+    offset: Optional[int | str] = None,
+    page_size: Optional[int] = 200,
+    server: Optional[str] = "http://localhost:6333",
 ):
     """
-    _scroll: since we use this in multiple functions this is our internal helper
+    _scroll: Internal helper that bypasses the python client.
+
+    The python client is missing the `next_page_offset` field in the response, so we need to use the raw API.
+
+    Borrowed from MJ Berends
     """
-    server = os.environ.get("QDRANT_SERVER", server)
     headers = {"Content-Type": "application/json"}
     url = f"{server}/collections/{collection}/points/scroll"
 
+    if limit and page_size and page_size > limit:
+        page_size = None
+        logger.warning("page_size is greater than limit. Using limit instead.")
+
     try:
-        # client = qdrant_client.QdrantClient(server, timeout=timeout)
         has_more = True
         scroll_args = {
             "collection_name": collection,
@@ -71,36 +78,49 @@ def _scroll(
             "with_vector": True,
         }
 
-        if filter != None:
+        if filter is not None:
             scroll_args["filter"] = filter
-        if offset != None:
+        if offset is not None:
             scroll_args["offset"] = offset
-        if limit != None:
-            scroll_args["limit"] = int(limit)
+        if limit is not None:
+            if page_size and page_size < limit:
+                scroll_args["limit"] = page_size
+            else:
+                scroll_args["limit"] = limit
+        elif page_size:
+            scroll_args["limit"] = page_size
 
-        points = []
+        total_points = 0
+
         while has_more:
+            if limit and total_points >= limit:
+                return
+
+            elif limit and page_size and (total_points + page_size) >= limit:
+                # last page
+                scroll_args["limit"] = limit - page_size
+
             has_more = False
             response = requests.post(url, json=scroll_args, headers=headers)
             response = json.loads(response.text)
 
-            if response["result"]["next_page_offset"] != None and limit == None:
+            if response["result"]["next_page_offset"] is not None:
                 next = response["result"]["next_page_offset"]
             else:
                 next = None
 
-            points += response["result"]["points"]
+            total_points += len(response["result"]["points"])
+
+            yield response["result"]["points"]
 
             if next:
                 has_more = True
                 scroll_args["offset"] = next
 
-        p_log(f"_scroll Found {len(points)} points in {collection}", "info")
-        return points
-    except Exception:
+        logger.debug(f"_scroll Found {total_points} points in {collection}", "info")
+    except Exception as exc:
+        logger.exception(exc)
         logger.error(f"Error scrolling points on {url}")
-        traceback.print_exc(file=sys.stderr)
-        return -2
 
 
 def _fetch_snapshot(url, download_path, zip=False):
