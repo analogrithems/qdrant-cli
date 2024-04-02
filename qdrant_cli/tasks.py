@@ -146,7 +146,7 @@ def _fetch_snapshot(url, download_path, zip=False):
                 with gzip.open(f"download_path.gz", "wb") as file:
                     for data in response.iter_content(block_size):
                         progress_bar.update(len(data))
-                        file.writelines(data)
+                        file.writelines(str.encode(data, "utf-8"))
             else:
                 with open(download_path, "wb") as file:
                     for data in response.iter_content(block_size):
