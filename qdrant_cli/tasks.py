@@ -1472,31 +1472,22 @@ async def recover_s3_snapshot(
                 paths = file.get("Key").split("/")
                 node = paths[1]
                 # @TODO - This is a hack to get the node url, we should get /cluster/status to check the cluster peers
-                node_url = f"http://{node.replace('_', ':')}"
+                node = node.split("_")
+                node_host = node[0]
+                node_port = node[1]
                 collection = paths[3]
                 p_log(
-                    f"Restoring {dest_pathname} to {node_url}/collections/{collection}/snapshots/upload?priority=snapshot&wait=true",
+                    f"Restoring {dest_pathname} to {node_host}/collections/{collection}/snapshots/upload?priority=snapshot&wait=true",
                     "info",
                 )
                 try:
-                    async with aiohttp.ClientSession() as session:
-                        async with session.post(
-                            f"{node_url}/collections/{collection}/snapshots/upload?priority=snapshot",
-                            headers={"Content-Type": "multipart/form-data"},
-                            data={
-                                "snapshot": (
-                                    os.path.basename(dest_pathname),
-                                    gzip.open(dest_pathname, "rb"),
-                                )
-                            },
-                        ) as response:
-                            if response.status == 200:
-                                os.unlink(dest_pathname)
-                            else:
-                                p_log(
-                                    f"Error restoring {dest_pathname} to {node_url}/collections/{collection}/snapshots/{os.path.basename(dest_pathname)}\n{response}",
-                                    "error",
-                                )
+                    client = qdrant_client.QdrantClient(node_host, port=node_port)
+                    client.recover_snapshot(
+                        collection_name,
+                        f"s3://{bucket}/{file.get('Key')}",
+                        priority=qdrant_client.models.SnapshotPriority.SNAPSHOT,
+                    )
+                    os.unlink(dest_pathname)
                 except Exception:
                     p_log(
                         f"Error restoring {dest_pathname} to {node_url}/collections/{collection}/snapshots/{os.path.basename(dest_pathname)}",
