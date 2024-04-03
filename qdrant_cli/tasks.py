@@ -1485,7 +1485,7 @@ async def recover_s3_snapshot(
                     client.recover_snapshot(
                         collection,
                         f"s3://{bucket}/{file.get('Key')}",
-                        priority=qdrant_client.models.SnapshotPriority.SNAPSHOT,
+                        priority="snapshot",
                     )
                     os.unlink(dest_pathname)
                 except Exception:
