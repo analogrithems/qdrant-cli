@@ -5,6 +5,7 @@ import logging
 import sys
 import time
 import traceback
+import asyncio
 
 import boto3
 
@@ -123,12 +124,14 @@ def _scroll(
         logger.error(f"Error scrolling points on {url}")
 
 
-def _fetch_snapshot(url, download_path, zip=False):
+async def _fetch_snapshot(url, download_path, zip=False):
     """
     This is a gernic
     """
     try:
-        response = requests.get(url, stream=True)
+        loop = asyncio.get_event_loop()
+        future1 = loop.run_in_executor(None, requests.get, url)
+        response = await future1
         total_size = int(response.headers.get("content-length", 0))
         block_size = 1024 * 32
 
@@ -143,10 +146,10 @@ def _fetch_snapshot(url, download_path, zip=False):
                 logger.debug(f"Making directory: {os.path.dirname(download_path)}")
                 os.makedirs(os.path.dirname(download_path), mode=0o777, exist_ok=True)
             if zip:
-                with gzip.open(f"download_path.gz", "wb") as file:
+                with gzip.open(f"{download_path}.gz", "wb") as file:
                     for data in response.iter_content(block_size):
                         progress_bar.update(len(data))
-                        file.writelines(str.encode(data, "utf-8"))
+                        file.write(data)
             else:
                 with open(download_path, "wb") as file:
                     for data in response.iter_content(block_size):
@@ -1434,7 +1437,7 @@ def create_cluster_snapshot(
     and then return it to the user in a snapshot file.
     """
     client = qdrant_client.QdrantClient(server, timeout=timeout)
-
+    loop = asyncio.get_event_loop()
     s3_client = boto3.client("s3")
     collections = client.get_collections()
     total = len(collections.collections)
@@ -1467,8 +1470,8 @@ def create_cluster_snapshot(
                 _bucket_path = f"{bucket_path}/QdrantBackups/{_t.tm_year}/{_t.tm_mon}/{_t.tm_mday}/{_t.tm_hour}-{_t.tm_min}-{_t.tm_sec}"
                 _upload_path = f"{_bucket_path}/{node.replace('http://', '').replace(':', '_')}/collections/{_collection.name}/snapshots/{snapshot_name}"
 
-                _fetch_snapshot(snapshot_url, _file, True)
-
+                loop.run_until_complete(_fetch_snapshot(snapshot_url, _file, True))
+                _file = f"{_file}.gz"
                 if bucket and bucket_path:
                     try:
                         s3_client.upload_file(_file, bucket, _upload_path)
