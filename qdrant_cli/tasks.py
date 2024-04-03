@@ -1495,8 +1495,7 @@ def create_cluster_snapshot(
                 )
                 _t = time.localtime()
                 _file = f"{SNAPSHOT_DOWNLOAD_PATH}/{node.replace('http://', '').replace(':', '_')}/collections/{_collection.name}/snapshots/{snapshot_name}"
-                _bucket_path = f"{bucket_path}/QdrantBackups/{_t.tm_year}/{_t.tm_mon}/{_t.tm_mday}/{_t.tm_hour}-{_t.tm_min}-{_t.tm_sec}"
-                _upload_path = f"{_bucket_path}/{node.replace('http://', '').replace(':', '_')}/collections/{_collection.name}/snapshots/{snapshot_name}"
+                _upload_path = f"{bucket_path}/{node.replace('http://', '').replace(':', '_')}/collections/{_collection.name}/snapshots/{snapshot_name}"
 
                 loop.run_until_complete(_fetch_snapshot(snapshot_url, _file, True))
                 _file = f"{_file}.gz"
