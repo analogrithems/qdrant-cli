@@ -1467,10 +1467,10 @@ async def recover_s3_snapshot(
                 resource.meta.client.download_file(
                     bucket, file.get("Key"), dest_pathname_gz
                 )
-                with gzip.open(dest_pathname_gz, "rb") as f_in:
-                    with open(dest_pathname, "wb") as f_out:
-                        shutil.copyfileobj(f_in, f_out)
-                        os.unlink(dest_pathname_gz)
+                # with gzip.open(dest_pathname_gz, "rb") as f_in:
+                #     with open(dest_pathname, "wb") as f_out:
+                #         shutil.copyfileobj(f_in, f_out)
+                #         os.unlink(dest_pathname_gz)
                 # Now that we just downloaded it from S3 we should restore it
                 p_log(
                     f"Fetching & unzip {file.get('Key')} from S3://{bucket}/{dist}.gz to {dest_pathname}",
@@ -1494,8 +1494,8 @@ async def recover_s3_snapshot(
                                 subwriter.append(
                                     {
                                         "snapshot": (
-                                            os.path.basename(dest_pathname),
-                                            open(dest_pathname, "rb"),
+                                            os.path.basename(dest_pathname_gz),
+                                            gzip.open(dest_pathname_gz, "rb"),
                                         )
                                     },
                                     {"Content-Type": "multipart/form-data"},
