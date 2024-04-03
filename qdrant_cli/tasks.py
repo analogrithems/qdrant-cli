@@ -1457,23 +1457,18 @@ async def recover_s3_snapshot(
                 )
         for file in result.get("Contents", []):
             # Lets give our file a home and download it
-            dest_pathname_gz = os.path.join(local, file.get("Key"))
-            dest_pathname = dest_pathname_gz
-            dest_pathname_gz = f"{dest_pathname_gz}.gz"
+            dest_pathname = os.path.join(local, file.get("Key"))
 
             if not os.path.exists(os.path.dirname(dest_pathname)):
                 os.makedirs(os.path.dirname(dest_pathname))
             if not file.get("Key").endswith("/"):
                 resource.meta.client.download_file(
-                    bucket, file.get("Key"), dest_pathname_gz
+                    bucket, file.get("Key"), dest_pathname
                 )
-                with gzip.open(dest_pathname_gz, "rb") as f_in:
-                    with open(dest_pathname, "wb") as f_out:
-                        shutil.copyfileobj(f_in, f_out)
-                        os.unlink(dest_pathname_gz)
+
                 # Now that we just downloaded it from S3 we should restore it
                 p_log(
-                    f"Fetching & unzip {file.get('Key')} from S3://{bucket}/{dist}.gz to {dest_pathname}",
+                    f"Fetching {file.get('Key')} from S3://{bucket}/{dist} to {dest_pathname}",
                     "info",
                 )
                 paths = file.get("Key").split("/")
@@ -1489,12 +1484,12 @@ async def recover_s3_snapshot(
                 )
                 try:
                     requests.post(
-                        f"http://{node_host}:{node_port}/collections/{collection}/snapshots/upload?priority=snapshot",
+                        f"http://{node_host}:{node_port}/collections/{collection}/snapshots/upload",
                         data={"priority": "snapshot"},
                         files={
                             "snapshot": (
                                 os.path.basename(dest_pathname),
-                                gzip.open(dest_pathname, "rb"),
+                                open(dest_pathname, "rb"),
                             )
                         },
                     )
