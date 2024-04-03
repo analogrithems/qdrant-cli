@@ -27,7 +27,7 @@ from tqdm import tqdm
 import qdrant_client
 import requests
 from invoke import task
-
+import shutil
 
 timeout = 10000
 SNAPSHOT_DOWNLOAD_PATH = f"./QdrantSnapshots"
@@ -1464,6 +1464,10 @@ async def recover_s3_snapshot(
                 resource.meta.client.download_file(
                     bucket, file.get("Key"), dest_pathname
                 )
+                with gzip.open(dest_pathname, "rb") as f_in:
+                    with open("file.txt", "wb") as f_out:
+                        shutil.copyfileobj(f_in, f_out)
+                        os.rename("file.txt", dest_pathname)
                 # Now that we just downloaded it from S3 we should restore it
                 p_log(
                     f"Fetching {file.get('Key')} from S3://{bucket}/{dist} to {dest_pathname}",
