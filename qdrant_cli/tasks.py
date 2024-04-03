@@ -1500,7 +1500,7 @@ async def recover_s3_snapshot(
                                 f"http://{node_host}:{node_port}/collections/{collection}/snapshots/upload?priority=snapshot",
                                 data=mpwriter,
                             ) as resp:
-                                response = await resp.text()
+                                response = resp.text()
                                 p_log(f"Response: {response}", "info")
                                 if response.status == 200:
                                     os.unlink(dest_pathname)
