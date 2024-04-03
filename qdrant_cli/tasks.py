@@ -1485,7 +1485,7 @@ async def recover_s3_snapshot(
                     client = qdrant_client.QdrantClient(node_host, port=node_port)
                     client.recover_snapshot(
                         collection,
-                        dest_pathname,
+                        f"file:/{dest_pathname}",
                         priority="snapshot",
                     )
                     os.unlink(dest_pathname)
