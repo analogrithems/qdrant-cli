@@ -1490,7 +1490,7 @@ async def recover_s3_snapshot(
                     os.unlink(dest_pathname)
                 except Exception:
                     p_log(
-                        f"Error restoring {dest_pathname} to {node_url}/collections/{collection}/snapshots/{os.path.basename(dest_pathname)}",
+                        f"Error restoring {dest_pathname} to {node_host}/collections/{collection}/snapshots/{os.path.basename(dest_pathname)}",
                         "error",
                     )
                     traceback.print_exc(file=sys.stdout)
