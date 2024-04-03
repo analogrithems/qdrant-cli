@@ -1496,7 +1496,7 @@ async def recover_s3_snapshot(
                                     attachment, {"Content-Type": "multipart/form-data"}
                                 )
                             mpwriter.append(subwriter)
-                            async with session.put(
+                            with session.put(
                                 f"http://{node_host}:{node_port}/collections/{collection}/snapshots/upload?priority=snapshot",
                                 data=mpwriter,
                             ) as resp:
