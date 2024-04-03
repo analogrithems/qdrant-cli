@@ -1425,7 +1425,7 @@ def assumed_role_session():
         web_identity_token = content_file.read()
 
     role = boto3.client("sts").assume_role_with_web_identity(
-        DurationSeconds=3600,
+        DurationSeconds=3600 * 4,
         RoleArn=role_arn,
         RoleSessionName="assume-role",
         WebIdentityToken=web_identity_token,
