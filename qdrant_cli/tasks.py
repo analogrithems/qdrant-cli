@@ -1413,6 +1413,33 @@ def delete_all_collections(c, server="http://localhost:6333", format="json"):
             return -3
 
 
+"""
+GET SESSION DETAILS
+"""
+
+
+def assumed_role_session():
+    role_arn = os.getenv("AWS_ROLE_ARN")
+    web_identity_token = None
+    with open(os.getenv("AWS_WEB_IDENTITY_TOKEN_FILE"), "r") as content_file:
+        web_identity_token = content_file.read()
+
+    role = boto3.client("sts").assume_role_with_web_identity(
+        RoleArn=role_arn,
+        RoleSessionName="assume-role",
+        WebIdentityToken=web_identity_token,
+    )
+    credentials = role["Credentials"]
+    aws_access_key_id = credentials["AccessKeyId"]
+    aws_secret_access_key = credentials["SecretAccessKey"]
+    aws_session_token = credentials["SessionToken"]
+    return boto3.session.Session(
+        aws_access_key_id=aws_access_key_id,
+        aws_secret_access_key=aws_secret_access_key,
+        aws_session_token=aws_session_token,
+    )
+
+
 @task(
     autoprint=False,
     help={
@@ -1438,7 +1465,8 @@ def create_cluster_snapshot(
     """
     client = qdrant_client.QdrantClient(server, timeout=timeout)
     loop = asyncio.get_event_loop()
-    s3_client = boto3.client("s3")
+    aws_session = assumed_role_session()
+    s3_client = aws_session.client("s3")
     collections = client.get_collections()
     total = len(collections.collections)
     _count = 0
