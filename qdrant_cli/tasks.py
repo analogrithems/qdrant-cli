@@ -1483,7 +1483,7 @@ async def recover_s3_snapshot(
                             data={
                                 "snapshot": (
                                     os.path.basename(dest_pathname),
-                                    open(dest_pathname, "rb"),
+                                    gzip.open(dest_pathname, "rb"),
                                 )
                             },
                         ) as response:
