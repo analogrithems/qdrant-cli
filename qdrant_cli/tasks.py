@@ -1425,6 +1425,7 @@ def assumed_role_session():
         web_identity_token = content_file.read()
 
     role = boto3.client("sts").assume_role_with_web_identity(
+        DurationSeconds=3600,
         RoleArn=role_arn,
         RoleSessionName="assume-role",
         WebIdentityToken=web_identity_token,
@@ -1438,6 +1439,82 @@ def assumed_role_session():
         aws_secret_access_key=aws_secret_access_key,
         aws_session_token=aws_session_token,
     )
+
+
+def recover_snapshot(client, resource, dist, local="/tmp", bucket="your_bucket"):
+    paginator = client.get_paginator("list_objects")
+    for result in paginator.paginate(Bucket=bucket, Delimiter="/", Prefix=dist):
+        if result.get("CommonPrefixes") is not None:
+            for subdir in result.get("CommonPrefixes"):
+                recover_snapshot(client, resource, subdir.get("Prefix"), local, bucket)
+        for file in result.get("Contents", []):
+            dest_pathname = os.path.join(local, file.get("Key"))
+            if not os.path.exists(os.path.dirname(dest_pathname)):
+                os.makedirs(os.path.dirname(dest_pathname))
+            if not file.get("Key").endswith("/"):
+                resource.meta.client.download_file(
+                    bucket, file.get("Key"), dest_pathname
+                )
+                # Now that we just downloaded it from S3 we should restore it
+                p_log(
+                    f"Fetching {file.get('Key')} from S3://{bucket}/{dist} to {dest_pathname}",
+                    "info",
+                )
+                paths = file.get("Key").split("/")
+                node = paths[1]
+                # @TODO - This is a hack to get the node url, we should get /cluster/status to check the cluster peers
+                node_url = f"http://{node.replace('_', ':')}"
+                collection = paths[3]
+                p_log(
+                    f"Restoring {dest_pathname} to {node_url}/collections/{collection}/snapshots/{os.path.basename(dest_pathname)}",
+                    "info",
+                )
+                try:
+                    requests.post(
+                        f"{node_url}/collections/{collection}/snapshots/upload?priority=snapshot&wait=true",
+                        files={
+                            "snapshot": (
+                                os.path.basename(dest_pathname),
+                                open(dest_pathname, "rb"),
+                            )
+                        },
+                    )
+                    os.unlink(dest_pathname)
+                except Exception:
+                    p_log(
+                        f"Error restoring {dest_pathname} to {node_url}/collections/{collection}/snapshots/{os.path.basename(dest_pathname)}",
+                        "error",
+                    )
+                    traceback.print_exc(file=sys.stdout)
+
+
+@task(
+    autoprint=False,
+    help={
+        "wait": "Wait till it finishes to return Default: True",
+        "server": "Server address of qdrant default: 'http://localhost:6333'",
+        "format": "output format of the response [JSON|YAML]",
+        "bucket": "The bucket to restore the snapshot from",
+        "snapshot_path": "The path in the bucket to a qdrant cluster snapshot",
+    },
+    optional=["wait", "format", "server", "bucket", "snapshot_path"],
+)
+def recover_cluster_snapshot(
+    c,
+    wait=True,
+    server="http://localhost:6333",
+    format="json",
+    bucket=None,
+    snapshot_path="",
+):
+    """
+    This will recover a cluster from a snapshot
+    """
+    loop = asyncio.get_event_loop()
+    aws_session = assumed_role_session()
+    client = aws_session.client("s3")
+    resource = aws_session.resource("s3")
+    recover_snapshot(client, resource, snapshot_path, "/tmp", bucket=bucket)
 
 
 @task(
