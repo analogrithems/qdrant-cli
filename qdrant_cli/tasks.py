@@ -1458,8 +1458,8 @@ async def recover_s3_snapshot(
         for file in result.get("Contents", []):
             # Lets give our file a home and download it
             dest_pathname_gz = os.path.join(local, file.get("Key"))
+            dest_pathname = dest_pathname_gz
             dest_pathname_gz = f"{dest_pathname_gz}.gz"
-            dest_pathname = dest_pathname_gz[:-3]
 
             if not os.path.exists(os.path.dirname(dest_pathname)):
                 os.makedirs(os.path.dirname(dest_pathname))
@@ -1473,7 +1473,7 @@ async def recover_s3_snapshot(
                         os.unlink(dest_pathname_gz)
                 # Now that we just downloaded it from S3 we should restore it
                 p_log(
-                    f"Fetching {file.get('Key')} from S3://{bucket}/{dist} to {dest_pathname}",
+                    f"Fetching & unzip {file.get('Key')} from S3://{bucket}/{dist}.gz to {dest_pathname}",
                     "info",
                 )
                 paths = file.get("Key").split("/")
@@ -1496,9 +1496,9 @@ async def recover_s3_snapshot(
                         priority="snapshot",
                     )
                     os.unlink(dest_pathname)
-                except Exception:
+                except Exception as e:
                     p_log(
-                        f"Error restoring {dest_pathname} to {node_host}/collections/{collection}/snapshots/{os.path.basename(dest_pathname)}",
+                        f"Error restoring {dest_pathname} to {node_host}/collections/{collection}/snapshots/{os.path.basename(dest_pathname)}. Error: {e}",
                         "error",
                     )
                     traceback.print_exc(file=sys.stdout)
