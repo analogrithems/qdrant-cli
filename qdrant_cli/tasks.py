@@ -1489,23 +1489,30 @@ async def recover_s3_snapshot(
                 )
                 try:
                     async with aiohttp.ClientSession() as session:
-                        async with session.put(
-                            f"http://{node_host}:{node_port}/collections/{collection}/snapshots/upload?priority=snapshot",
-                            headers={"Content-Type": "multipart/form-data"},
-                            form={
-                                "snapshot": (
-                                    os.path.basename(dest_pathname),
-                                    gzip.open(dest_pathname, "rb"),
+                        with aiohttp.MultipartWriter("mixed") as mpwriter:
+                            with aiohttp.MultipartWriter("related") as subwriter:
+                                subwriter.append(
+                                    {
+                                        "snapshot": (
+                                            os.path.basename(dest_pathname),
+                                            gzip.open(dest_pathname, "rb"),
+                                        )
+                                    },
+                                    {"Content-Type": "multipart/form-data"},
                                 )
-                            },
-                        ) as response:
-                            if response.status == 200:
-                                os.unlink(dest_pathname)
-                            else:
-                                p_log(
-                                    f"Error restoring {dest_pathname} to {node_host}/collections/{collection}/snapshots/{os.path.basename(dest_pathname)}\n{response}",
-                                    "error",
-                                )
+                            mpwriter.append(subwriter)
+                            async with session.put(
+                                f"http://{node_host}:{node_port}/collections/{collection}/snapshots/upload?priority=snapshot",
+                                data=mpwriter,
+                            ) as resp:
+                                response = await resp.text()
+                                if response.status == 200:
+                                    os.unlink(dest_pathname)
+                                else:
+                                    p_log(
+                                        f"Error restoring {dest_pathname} to {node_host}/collections/{collection}/snapshots/{os.path.basename(dest_pathname)}\n{response}",
+                                        "error",
+                                    )
                     os.unlink(dest_pathname)
                 except Exception as e:
                     p_log(
