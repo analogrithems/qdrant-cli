@@ -6,6 +6,7 @@ import sys
 import time
 import traceback
 import asyncio
+import aiohttp
 
 import boto3
 
@@ -24,6 +25,7 @@ from tqdm import tqdm
 import qdrant_client
 import requests
 from invoke import task
+
 
 timeout = 10000
 SNAPSHOT_DOWNLOAD_PATH = f"./QdrantSnapshots"
@@ -1441,15 +1443,18 @@ def assumed_role_session():
     )
 
 
-def recover_s3_snapshot(client, resource, dist, local="/tmp", bucket="your_bucket"):
+async def recover_s3_snapshot(
+    client, resource, dist, local="/tmp", bucket="your_bucket"
+):
     paginator = client.get_paginator("list_objects")
     for result in paginator.paginate(Bucket=bucket, Delimiter="/", Prefix=dist):
         if result.get("CommonPrefixes") is not None:
             for subdir in result.get("CommonPrefixes"):
-                recover_s3_snapshot(
+                await recover_s3_snapshot(
                     client, resource, subdir.get("Prefix"), local, bucket
                 )
         for file in result.get("Contents", []):
+            # Lets give our file a home and download it
             dest_pathname = os.path.join(local, file.get("Key"))
             if not os.path.exists(os.path.dirname(dest_pathname)):
                 os.makedirs(os.path.dirname(dest_pathname))
@@ -1472,16 +1477,23 @@ def recover_s3_snapshot(client, resource, dist, local="/tmp", bucket="your_bucke
                     "info",
                 )
                 try:
-                    requests.post(
-                        f"{node_url}/collections/{collection}/snapshots/upload?priority=snapshot&wait=true",
-                        files={
-                            "snapshot": (
-                                os.path.basename(dest_pathname),
-                                open(dest_pathname, "rb"),
-                            )
-                        },
-                    )
-                    os.unlink(dest_pathname)
+                    async with aiohttp.ClientSession() as session:
+                        async with session.post(
+                            f"{node_url}/collections/{collection}/snapshots/upload?priority=snapshot&wait=true",
+                            data={
+                                "snapshot": (
+                                    os.path.basename(dest_pathname),
+                                    open(dest_pathname, "rb"),
+                                )
+                            },
+                        ) as response:
+                            if response.status == 200:
+                                os.unlink(dest_pathname)
+                            else:
+                                p_log(
+                                    f"Error restoring {dest_pathname} to {node_url}/collections/{collection}/snapshots/{os.path.basename(dest_pathname)}",
+                                    "error",
+                                )
                 except Exception:
                     p_log(
                         f"Error restoring {dest_pathname} to {node_url}/collections/{collection}/snapshots/{os.path.basename(dest_pathname)}",
@@ -1501,7 +1513,7 @@ def recover_s3_snapshot(client, resource, dist, local="/tmp", bucket="your_bucke
     },
     optional=["wait", "format", "server", "bucket", "snapshot_path"],
 )
-def recover_cluster_snapshot(
+async def recover_cluster_snapshot(
     c,
     wait=True,
     server="http://localhost:6333",
@@ -1512,7 +1524,6 @@ def recover_cluster_snapshot(
     """
     This will recover a cluster from a snapshot
     """
-    loop = asyncio.get_event_loop()
     aws_session = assumed_role_session()
     client = aws_session.client("s3")
     resource = aws_session.resource("s3")
@@ -1530,7 +1541,7 @@ def recover_cluster_snapshot(
     },
     optional=["wait", "format", "server", "bucket", "bucket_path"],
 )
-def create_cluster_snapshot(
+async def create_cluster_snapshot(
     c,
     wait=True,
     server="http://localhost:6333",
@@ -1561,9 +1572,10 @@ def create_cluster_snapshot(
                 node = node.uri.replace("6335", "6333").strip("/")
                 node_client = qdrant_client.QdrantClient(node, timeout=timeout)
 
-                snapshot_info = node_client.create_snapshot(
-                    collection_name=_collection.name, wait=True
+                future1 = loop.run_in_executor(
+                    None, node_client.create_snapshot, _collection.name, True
                 )
+                snapshot_info = await future1
                 snapshot_name = snapshot_info.name
                 snapshot_url = (
                     f"{node}/collections/{_collection.name}/snapshots/{snapshot_name}"
@@ -1576,12 +1588,12 @@ def create_cluster_snapshot(
                 _file = f"{SNAPSHOT_DOWNLOAD_PATH}/{node.replace('http://', '').replace(':', '_')}/collections/{_collection.name}/snapshots/{snapshot_name}"
                 _upload_path = f"{bucket_path}/{node.replace('http://', '').replace(':', '_')}/collections/{_collection.name}/snapshots/{snapshot_name}"
 
-                loop.run_until_complete(_fetch_snapshot(snapshot_url, _file, True))
+                await _fetch_snapshot(snapshot_url, _file, True)
                 # Last function renamed our file to .gz
                 _file = f"{_file}.gz"
                 if bucket and bucket_path:
                     try:
-                        s3_client.upload_file(_file, bucket, _upload_path)
+                        await s3_client.upload_file(_file, bucket, _upload_path)
                         p_log(
                             f"Sent to S3://{bucket}/{_upload_path}/{os.path.basename(_file)}, unlinking({_file}) ({_count}/{total})",
                             "info",
