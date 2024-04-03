@@ -1488,13 +1488,24 @@ async def recover_s3_snapshot(
                     "info",
                 )
                 try:
-
-                    client = qdrant_client.QdrantClient(node_host, port=node_port)
-                    client.recover_snapshot(
-                        collection_name=collection,
-                        location=f"file://{dest_pathname}",
-                        priority="snapshot",
-                    )
+                    async with aiohttp.ClientSession() as session:
+                        async with session.put(
+                            f"http://{node_host}:{node_port}/collections/{collection}/snapshots/upload?priority=snapshot",
+                            headers={"Content-Type": "multipart/form-data"},
+                            form={
+                                "snapshot": (
+                                    os.path.basename(dest_pathname),
+                                    gzip.open(dest_pathname, "rb"),
+                                )
+                            },
+                        ) as response:
+                            if response.status == 200:
+                                os.unlink(dest_pathname)
+                            else:
+                                p_log(
+                                    f"Error restoring {dest_pathname} to {node_host}/collections/{collection}/snapshots/{os.path.basename(dest_pathname)}\n{response}",
+                                    "error",
+                                )
                     os.unlink(dest_pathname)
                 except Exception as e:
                     p_log(
