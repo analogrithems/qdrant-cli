@@ -1488,24 +1488,16 @@ async def recover_s3_snapshot(
                     "info",
                 )
                 try:
-                    async with aiohttp.ClientSession() as session:
-                        async with session.post(
-                            f"http://{node_host}:{node_port}/collections/{collection}/snapshots/upload?priority=snapshot",
-                            data={"priority": "snapshot"},
-                            files={
-                                "snapshot": (
-                                    os.path.basename(dest_pathname),
-                                    gzip.open(dest_pathname, "rb"),
-                                )
-                            },
-                        ) as response:
-                            if response.status == 200:
-                                os.unlink(dest_pathname)
-                            else:
-                                p_log(
-                                    f"Error restoring {dest_pathname} to {node_host}/collections/{collection}/snapshots/{os.path.basename(dest_pathname)}\n{response}",
-                                    "error",
-                                )
+                    requests.post(
+                        f"http://{node_host}:{node_port}/collections/{collection}/snapshots/upload?priority=snapshot",
+                        data={"priority": "snapshot"},
+                        files={
+                            "snapshot": (
+                                os.path.basename(dest_pathname),
+                                gzip.open(dest_pathname, "rb"),
+                            )
+                        },
+                    )
                     os.unlink(dest_pathname)
                 except Exception as e:
                     p_log(
