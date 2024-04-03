@@ -1501,6 +1501,7 @@ async def recover_s3_snapshot(
                                 data=mpwriter,
                             ) as resp:
                                 response = await resp.text()
+                                p_log(f"Response: {response}", "info")
                                 if response.status == 200:
                                     os.unlink(dest_pathname)
                                 else:
