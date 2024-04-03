@@ -1473,7 +1473,7 @@ async def recover_s3_snapshot(
                 node_url = f"http://{node.replace('_', ':')}"
                 collection = paths[3]
                 p_log(
-                    f"Restoring {dest_pathname} to {node_url}/collections/{collection}/snapshots/{os.path.basename(dest_pathname)}",
+                    f"Restoring {dest_pathname} to {node_url}/collections/{collection}/snapshots/upload?priority=snapshot&wait=true",
                     "info",
                 )
                 try:
@@ -1492,7 +1492,7 @@ async def recover_s3_snapshot(
                             else:
                                 p_log(
                                     f"Error restoring {dest_pathname} to {node_url}/collections/{collection}/snapshots/{os.path.basename(dest_pathname)}",
-                                    "error",
+                                    response,
                                 )
                 except Exception:
                     p_log(
