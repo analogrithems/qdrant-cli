@@ -1488,17 +1488,12 @@ async def recover_s3_snapshot(
                     "info",
                 )
                 try:
+                    attachment = gzip.open(dest_pathname_gz, "rb")
                     async with aiohttp.ClientSession() as session:
                         with aiohttp.MultipartWriter("mixed") as mpwriter:
                             with aiohttp.MultipartWriter("related") as subwriter:
                                 subwriter.append(
-                                    {
-                                        "snapshot": (
-                                            os.path.basename(dest_pathname_gz),
-                                            gzip.open(dest_pathname_gz, "rb"),
-                                        )
-                                    },
-                                    {"Content-Type": "multipart/form-data"},
+                                    attachment, {"Content-Type": "multipart/form-data"}
                                 )
                             mpwriter.append(subwriter)
                             async with session.put(
