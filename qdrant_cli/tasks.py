@@ -1495,7 +1495,7 @@ async def recover_s3_snapshot(
                                     {
                                         "snapshot": (
                                             os.path.basename(dest_pathname),
-                                            gzip.open(dest_pathname, "rb"),
+                                            open(dest_pathname, "rb"),
                                         )
                                     },
                                     {"Content-Type": "multipart/form-data"},
