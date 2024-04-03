@@ -1498,10 +1498,15 @@ def create_cluster_snapshot(
                 _upload_path = f"{bucket_path}/{node.replace('http://', '').replace(':', '_')}/collections/{_collection.name}/snapshots/{snapshot_name}"
 
                 loop.run_until_complete(_fetch_snapshot(snapshot_url, _file, True))
+                # Last function renamed our file to .gz
                 _file = f"{_file}.gz"
                 if bucket and bucket_path:
                     try:
                         s3_client.upload_file(_file, bucket, _upload_path)
+                        p_log(
+                            f"Sent to S3://{bucket}/{_upload_path}/{os.path.basename(_file)}, unlinking({_file}) ({_count}/{total})",
+                            "info",
+                        )
                         os.unlink(_file)
                     except Exception:
                         p_log(
