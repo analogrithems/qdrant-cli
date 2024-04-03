@@ -1489,7 +1489,7 @@ async def recover_s3_snapshot(
                 )
                 try:
                     async with aiohttp.ClientSession() as session:
-                        async with session.put(
+                        async with session.post(
                             f"http://{node_host}:{node_port}/collections/{collection}/snapshots/upload?priority=snapshot",
                             data={"priority": "snapshot"},
                             files={
