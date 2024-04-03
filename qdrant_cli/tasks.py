@@ -1467,10 +1467,10 @@ async def recover_s3_snapshot(
                 resource.meta.client.download_file(
                     bucket, file.get("Key"), dest_pathname_gz
                 )
-                # with gzip.open(dest_pathname_gz, "rb") as f_in:
-                #     with open(dest_pathname, "wb") as f_out:
-                #         shutil.copyfileobj(f_in, f_out)
-                #         os.unlink(dest_pathname_gz)
+                with gzip.open(dest_pathname_gz, "rb") as f_in:
+                    with open(dest_pathname, "wb") as f_out:
+                        shutil.copyfileobj(f_in, f_out)
+                        os.unlink(dest_pathname_gz)
                 # Now that we just downloaded it from S3 we should restore it
                 p_log(
                     f"Fetching & unzip {file.get('Key')} from S3://{bucket}/{dist}.gz to {dest_pathname}",
@@ -1488,27 +1488,24 @@ async def recover_s3_snapshot(
                     "info",
                 )
                 try:
-                    attachment = gzip.open(dest_pathname_gz, "rb")
                     async with aiohttp.ClientSession() as session:
-                        with aiohttp.MultipartWriter("mixed") as mpwriter:
-                            with aiohttp.MultipartWriter("related") as subwriter:
-                                subwriter.append(
-                                    attachment, {"Content-Type": "multipart/form-data"}
+                        async with session.put(
+                            f"http://{node_host}:{node_port}/collections/{collection}/snapshots/upload?priority=snapshot",
+                            data={"priority": "snapshot"},
+                            files={
+                                "snapshot": (
+                                    os.path.basename(dest_pathname),
+                                    gzip.open(dest_pathname, "rb"),
                                 )
-                            mpwriter.append(subwriter)
-                            with session.put(
-                                f"http://{node_host}:{node_port}/collections/{collection}/snapshots/upload?priority=snapshot",
-                                data=mpwriter,
-                            ) as resp:
-                                response = resp.text()
-                                p_log(f"Response: {response}", "info")
-                                if response.status == 200:
-                                    os.unlink(dest_pathname)
-                                else:
-                                    p_log(
-                                        f"Error restoring {dest_pathname} to {node_host}/collections/{collection}/snapshots/{os.path.basename(dest_pathname)}\n{response}",
-                                        "error",
-                                    )
+                            },
+                        ) as response:
+                            if response.status == 200:
+                                os.unlink(dest_pathname)
+                            else:
+                                p_log(
+                                    f"Error restoring {dest_pathname} to {node_host}/collections/{collection}/snapshots/{os.path.basename(dest_pathname)}\n{response}",
+                                    "error",
+                                )
                     os.unlink(dest_pathname)
                 except Exception as e:
                     p_log(
