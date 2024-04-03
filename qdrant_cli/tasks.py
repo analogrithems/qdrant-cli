@@ -1441,12 +1441,14 @@ def assumed_role_session():
     )
 
 
-def recover_snapshot(client, resource, dist, local="/tmp", bucket="your_bucket"):
+def recover_s3_snapshot(client, resource, dist, local="/tmp", bucket="your_bucket"):
     paginator = client.get_paginator("list_objects")
     for result in paginator.paginate(Bucket=bucket, Delimiter="/", Prefix=dist):
         if result.get("CommonPrefixes") is not None:
             for subdir in result.get("CommonPrefixes"):
-                recover_snapshot(client, resource, subdir.get("Prefix"), local, bucket)
+                recover_s3_snapshot(
+                    client, resource, subdir.get("Prefix"), local, bucket
+                )
         for file in result.get("Contents", []):
             dest_pathname = os.path.join(local, file.get("Key"))
             if not os.path.exists(os.path.dirname(dest_pathname)):
@@ -1514,7 +1516,7 @@ def recover_cluster_snapshot(
     aws_session = assumed_role_session()
     client = aws_session.client("s3")
     resource = aws_session.resource("s3")
-    recover_snapshot(client, resource, snapshot_path, "/tmp", bucket=bucket)
+    recover_s3_snapshot(client, resource, snapshot_path, "/tmp", bucket=bucket)
 
 
 @task(
