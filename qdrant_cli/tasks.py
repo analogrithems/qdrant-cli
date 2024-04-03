@@ -1483,7 +1483,7 @@ async def recover_s3_snapshot(
                 try:
 
                     client = qdrant_client.QdrantClient(node_host, port=node_port)
-                    client.upload_snapshot(
+                    client.recover_snapshot(
                         collection_name=collection,
                         location=f"file://{dest_pathname}",
                         priority="snapshot",
