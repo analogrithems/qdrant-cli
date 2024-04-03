@@ -1457,17 +1457,20 @@ async def recover_s3_snapshot(
                 )
         for file in result.get("Contents", []):
             # Lets give our file a home and download it
-            dest_pathname = os.path.join(local, file.get("Key"))
+            dest_pathname_gz = os.path.join(local, file.get("Key"))
+            dest_pathname_gz = f"{dest_pathname_gz}.gz"
+            dest_pathname = dest_pathname_gz[:-3]
+
             if not os.path.exists(os.path.dirname(dest_pathname)):
                 os.makedirs(os.path.dirname(dest_pathname))
             if not file.get("Key").endswith("/"):
                 resource.meta.client.download_file(
-                    bucket, file.get("Key"), dest_pathname
+                    bucket, file.get("Key"), dest_pathname_gz
                 )
-                with gzip.open(dest_pathname, "rb") as f_in:
-                    with open("file.txt", "wb") as f_out:
+                with gzip.open(dest_pathname_gz, "rb") as f_in:
+                    with open(dest_pathname, "wb") as f_out:
                         shutil.copyfileobj(f_in, f_out)
-                        os.rename("file.txt", dest_pathname)
+                        os.unlink(dest_pathname_gz)
                 # Now that we just downloaded it from S3 we should restore it
                 p_log(
                     f"Fetching {file.get('Key')} from S3://{bucket}/{dist} to {dest_pathname}",
@@ -1489,7 +1492,7 @@ async def recover_s3_snapshot(
                     client = qdrant_client.QdrantClient(node_host, port=node_port)
                     client.recover_snapshot(
                         collection_name=collection,
-                        location=f"file://{dest_pathname}",
+                        location=f"file://{os.path.join(local, file.get("Key"))}",
                         priority="snapshot",
                     )
                     os.unlink(dest_pathname)
