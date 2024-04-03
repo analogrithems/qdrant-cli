@@ -1513,7 +1513,7 @@ async def recover_s3_snapshot(
     },
     optional=["wait", "format", "server", "bucket", "snapshot_path"],
 )
-async def recover_cluster_snapshot(
+def recover_cluster_snapshot(
     c,
     wait=True,
     server="http://localhost:6333",
@@ -1527,7 +1527,10 @@ async def recover_cluster_snapshot(
     aws_session = assumed_role_session()
     client = aws_session.client("s3")
     resource = aws_session.resource("s3")
-    recover_s3_snapshot(client, resource, snapshot_path, "/tmp", bucket=bucket)
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(
+        recover_s3_snapshot(client, resource, snapshot_path, "/tmp", bucket=bucket)
+    )
 
 
 @task(
@@ -1541,7 +1544,7 @@ async def recover_cluster_snapshot(
     },
     optional=["wait", "format", "server", "bucket", "bucket_path"],
 )
-async def create_cluster_snapshot(
+def create_cluster_snapshot(
     c,
     wait=True,
     server="http://localhost:6333",
@@ -1571,11 +1574,9 @@ async def create_cluster_snapshot(
             try:
                 node = node.uri.replace("6335", "6333").strip("/")
                 node_client = qdrant_client.QdrantClient(node, timeout=timeout)
-
-                future1 = loop.run_in_executor(
-                    None, node_client.create_snapshot, _collection.name, True
+                snapshot_info = node_client.create_snapshot(
+                    collection_name=_collection.name, wait=True
                 )
-                snapshot_info = await future1
                 snapshot_name = snapshot_info.name
                 snapshot_url = (
                     f"{node}/collections/{_collection.name}/snapshots/{snapshot_name}"
@@ -1588,12 +1589,12 @@ async def create_cluster_snapshot(
                 _file = f"{SNAPSHOT_DOWNLOAD_PATH}/{node.replace('http://', '').replace(':', '_')}/collections/{_collection.name}/snapshots/{snapshot_name}"
                 _upload_path = f"{bucket_path}/{node.replace('http://', '').replace(':', '_')}/collections/{_collection.name}/snapshots/{snapshot_name}"
 
-                await _fetch_snapshot(snapshot_url, _file, True)
+                loop.run_until_complete(_fetch_snapshot(snapshot_url, _file, True))
                 # Last function renamed our file to .gz
                 _file = f"{_file}.gz"
                 if bucket and bucket_path:
                     try:
-                        await s3_client.upload_file(_file, bucket, _upload_path)
+                        s3_client.upload_file(_file, bucket, _upload_path)
                         p_log(
                             f"Sent to S3://{bucket}/{_upload_path}/{os.path.basename(_file)}, unlinking({_file}) ({_count}/{total})",
                             "info",
