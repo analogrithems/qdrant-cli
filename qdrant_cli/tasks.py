@@ -6,6 +6,8 @@ import sys
 import time
 import traceback
 import asyncio
+
+from httpx import head
 import aiohttp
 
 import boto3
@@ -1480,6 +1482,7 @@ async def recover_s3_snapshot(
                     async with aiohttp.ClientSession() as session:
                         async with session.post(
                             f"{node_url}/collections/{collection}/snapshots/upload?priority=snapshot",
+                            headers={"Content-Type": "multipart/form-data"},
                             data={
                                 "snapshot": (
                                     os.path.basename(dest_pathname),
